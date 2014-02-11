@@ -120,7 +120,7 @@ define(["map", "eventing"], function (map, eventing) {
     //  main
     // =========================================================================
 
-    tests();
+    //tests();
 
     return {
         deltaSet: deltaSet
