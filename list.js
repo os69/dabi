@@ -46,7 +46,7 @@ define(["map", "eventing"], function (map, eventing) {
         for (var i1 = 0, i2 = 0; i1 < list1.length || i2 < list2.length;) {
             var e1 = list1[i1];
             var e2 = list2[i2];
-            if (comparator(e1, e2)) {
+            if (e1 && e2 && comparator(e1, e2)) {
                 update(e1);
                 i1++;
                 i2++;

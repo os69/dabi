@@ -237,13 +237,28 @@ define(["map", "objectid"], function (map, objectid) {
 
 
         connect: function (sender, signal, receiver, slot, trans1, trans2) {
-            this.connectSingle(sender, signal, receiver, slot, trans1);
-            this.connectSingle(receiver, slot, sender, signal, trans2);
+            if (arguments.length <= 4) {
+                this.connectSingle(sender, signal, receiver, slot);
+            } else {
+                if (trans1) {
+                    if (trans1 instanceof Function) {
+                        this.connectSingle(sender, signal, receiver, slot, trans1);
+                    } else {
+                        this.connectSingle(sender, signal, receiver, slot);
+                    }
+
+                }
+                if (trans2) {
+                    if (trans2 instanceof Function) {
+                        this.connectSingle(receiver, slot, sender, signal, trans2);
+                    } else {
+                        this.connectSingle(receiver, slot, sender, signal);
+                    }
+                }
+            }
         },
 
         connectSingle: function (sender, signal, receiver, slot, transformation) {
-            //this.generateGetterSetter(sender, signal);
-            //this.generateGetterSetter(receiver, slot);
             this.decorate(sender, signal);
             this.decorate(receiver, slot);
             module.subscribe(sender, signal, receiver, slot, this.generateHandler(transformation));

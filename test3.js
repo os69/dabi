@@ -47,6 +47,24 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
 
     };
 
+    // =========================================================================
+    //  bind
+    // =========================================================================
+
+    var setterName = function (propertyName) {
+        return 'set' + propertyName[0].toUpperCase() + propertyName.slice(1);
+    };
+
+    var generateSetter = function (obj, propertyName) {
+        var setter = setterName(propertyName);
+        if (obj[setter]) {
+            return;
+        }
+        obj[setter] = function (value) {
+            this[propertyName] = value;
+        };
+    };
+
     var bindListToDom = function (list, domList, trans) {
 
         methodEventing.connect(list, "push", domList, "appendChild", trans);
@@ -56,7 +74,7 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
             var index = arguments[0];
             var numberDel = arguments[1];
             // delete
-            var children = this.receiver.querySelectorAll("li");
+            var children = this.receiver.children;
             for (i = 0; i < numberDel; ++i) {
                 var element = children.item(index + i);
                 fadeOut(element);
@@ -66,31 +84,33 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
             if (index > 0) {
                 refElement = children.item(index - 1).nextSibling;
             } else {
-                refElement = this.receiver.querySelector("li");
+                refElement = children.item(0);
             }
             for (var i = 2; i < arguments.length; ++i) {
                 var listElement = arguments[i];
-                var li = document.createElement('li');
-                li.appendChild(trans(listElement));
-                this.receiver.insertBefore(li, refElement);
-                fadeIn(li);
+                var transListElement = trans.apply(this, [listElement])[0];
+                if (refElement) {
+                    this.receiver.insertBefore(transListElement, refElement);
+                } else {
+                    this.receiver.appendChild(transListElement);
+                }
+                fadeIn(transListElement);
             }
             return methodEventing.noMethodCall;
         });
 
     };
 
-    var bindTextToDom = function (obj, property, inputField) {
+    var bindTextToDom = function (obj, propertyName, inputField) {
 
-        methodEventing.connect(obj, property, inputField, "val", function (val) {
+        generateSetter(obj, propertyName);
+
+        methodEventing.connect(obj, setterName(propertyName), inputField, "val", function (val) {
             inputField.value = val;
             return methodEventing.noMethodCall;
-        }, function (val) {
-            obj[property] = val;
-            return methodEventing.noMethodCall;
-        });
+        }, true);
 
-        $(inputField).val(function () {
+        inputField.addEventListener('change', function (event) {
             methodEventing.raiseEvent(inputField, "val", [inputField.value]);
         });
 
@@ -100,7 +120,7 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
     // =========================================================================
     //  test ui 
     // =========================================================================
-    var testUI = function () {
+    var testUI1 = function () {
 
         // viewer
         var viewer = document.createElement('ul');
@@ -113,7 +133,7 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
         bindListToDom(model, viewer, function (element) {
             var li = document.createElement('li');
             li.appendChild(document.createTextNode(element));
-            return li;
+            return [li];
         });
 
         model.push('Apfel');
@@ -138,53 +158,144 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
     // =========================================================================
     var testUI2 = function () {
 
-        // viewer
-        var viewer = document.createElement('ul');
-        document.body.appendChild(viewer);
-
-        // model
-        var model = [];
-
+        // create order
         var transOrder = function (order) {
             var li = document.createElement('li');
             li.appendChild(document.createTextNode(order.label));
             var itemList = document.createElement('ul');
+            li.appendChild(itemList);
+
             for (var i = 0; i < order.items.length; ++i) {
                 var item = order.items[i];
-                itemList.appendChild(transItem(item)[0]);
+                var domItem = transItem.apply({
+                    sender: order.items,
+                    receiver: itemList
+                }, [item])[0];
+                itemList.appendChild(domItem);
             }
-            li.appendChild(itemList);
             bindListToDom(order.items, itemList, transItem);
+
             return [li];
         };
 
+        // create item
         var transItem = function (item) {
+
+            var self = this;
+
             var li = document.createElement('li');
-            li.appendChild(document.createTextNode(item));
+
+            // input
+            var input = document.createElement('input');
+            input.setAttribute('type', 'text');
+            input.value = item.label;
+            li.appendChild(input);
+            bindTextToDom(item, 'label', input);
+
+            // del button
+            var delButton = document.createElement('button');
+            delButton.appendChild(document.createTextNode('Del'));
+            delButton.addEventListener('click', function () {
+                var index = self.sender.indexOf(item);
+                self.sender.splice(index, 1);
+            });
+            li.appendChild(delButton);
+
             return [li];
         };
+
+        // viewer 1
+        var h1 = document.createElement('h1');
+        h1.appendChild(document.createTextNode('View 1'));
+        document.body.appendChild(h1);
+        var viewer1 = document.createElement('ul');
+        document.body.appendChild(viewer1);
+
+        // viewer 2
+        h1 = document.createElement('h1');
+        h1.appendChild(document.createTextNode('View 2'));
+        document.body.appendChild(h1);
+        var viewer2 = document.createElement('ul');
+        document.body.appendChild(viewer2);
+
+        // model
+        var model = [];
 
         // bind
-        bindListToDom(model, viewer, transOrder);
+        bindListToDom(model, viewer1, transOrder);
+        bindListToDom(model, viewer2, transOrder);
 
+        // add some elements
         model.push({
             label: 'Order 1',
-            items: ['Apfel', 'Birne']
+            items: [{
+                label: 'Apfel'
+            }, {
+                label: 'Birne'
+            }]
         });
         model.push({
             label: 'Order 2',
-            items: ['Tomate', 'Kohlrabi']
+            items: [{
+                label: 'Tomate'
+            }, {
+                label: 'Gurke'
+            }]
         });
 
-        var button = document.createElement('button');
-        document.body.appendChild(button);
-        button.appendChild(document.createTextNode('Click'));
-        button.addEventListener('click', function () {
+        var button1 = document.createElement('button');
+        document.body.appendChild(button1);
+        button1.appendChild(document.createTextNode('Click'));
+        button1.addEventListener('click', function () {
 
-            model[0].items.push('Orange');
+            model[0].items.push({
+                label: 'Pfirsich'
+            });
+
             model.push({
                 label: 'Order 3',
-                items: ['Esel']
+                items: [{
+                    label: 'Eiche'
+                }, {
+                    label: 'Birke'
+                }]
+            });
+
+        }, false);
+
+        var button2 = document.createElement('button');
+        document.body.appendChild(button2);
+        button2.appendChild(document.createTextNode('Click'));
+        button2.addEventListener('click', function () {
+
+            var model2 = [];
+            model2.push({
+                label: 'Order 1',
+                items: [{
+                    label: 'Apfel'
+            }, {
+                    label: 'Birne'
+            }]
+            });
+            model2.push({
+                label: 'Order 2',
+                items: [{
+                    label: 'Tomate'
+            }, {
+                    label: 'Gurke'
+            }]
+            });
+            model2.push({
+                label: 'Order 3',
+                items: [{
+                    label: 'Birke'
+            }, {
+                    label: 'Esche'
+            }]
+            });
+
+            list.deltaSet(model, model2, function (order) {
+                return order.label;
             });
 
         }, false);
@@ -193,24 +304,30 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
     };
 
     // =========================================================================
-    //  test ui 2
+    //  test ui 3
     // =========================================================================
     var testUI3 = function () {
 
-        var input = document.createElement('input');
-        document.body.appendChild(input);
+        var input1 = document.createElement('input');
+        input1.setAttribute('type', 'text');
+        document.body.appendChild(input1);
+
+        var input2 = document.createElement('input');
+        input2.setAttribute('type', 'text');
+        document.body.appendChild(input2);
 
         var obj = {
             value: 0
         };
 
-        bindTextToDom(obj, "value", input);
+        bindTextToDom(obj, "value", input1);
+        bindTextToDom(obj, "value", input2);
     };
 
     // =========================================================================
     //  main
     // =========================================================================
-    testUI3();
+    testUI2();
     //testAnimation();
 
 });
