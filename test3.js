@@ -11,6 +11,7 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
     //  animation
     // =========================================================================
     var fadeIn = function (element) {
+        return;
         var listener = function (event) {
             if (event.animationName === 'fadeIn') {
                 this.classList.remove('fadeIn');
@@ -22,6 +23,8 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
     };
 
     var fadeOut = function (element) {
+        element.parentNode.removeChild(element);
+        return;
         var listener = function (event) {
             if (event.animationName === 'fadeOut') {
                 this.classList.remove('fadeOut');
@@ -73,8 +76,10 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
             // parse arguments
             var index = arguments[0];
             var numberDel = arguments[1];
+            var list = arguments[arguments.length - 2];
+            var domList = arguments[arguments.length - 1];
             // delete
-            var children = this.receiver.children;
+            var children = domList.children;
             for (i = 0; i < numberDel; ++i) {
                 var element = children.item(index + i);
                 fadeOut(element);
@@ -86,13 +91,13 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
             } else {
                 refElement = children.item(0);
             }
-            for (var i = 2; i < arguments.length; ++i) {
+            for (var i = 2; i < arguments.length - 2; ++i) {
                 var listElement = arguments[i];
                 var transListElement = trans.apply(this, [listElement])[0];
                 if (refElement) {
-                    this.receiver.insertBefore(transListElement, refElement);
+                    domList.insertBefore(transListElement, refElement);
                 } else {
-                    this.receiver.appendChild(transListElement);
+                    domList.appendChild(transListElement);
                 }
                 fadeIn(transListElement);
             }
@@ -160,17 +165,16 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
 
         // create order
         var transOrder = function (order) {
+
+            // header
             var li = document.createElement('li');
             li.appendChild(document.createTextNode(order.label));
+
+            // items
             var itemList = document.createElement('ul');
             li.appendChild(itemList);
-
             for (var i = 0; i < order.items.length; ++i) {
-                var item = order.items[i];
-                var domItem = transItem.apply({
-                    sender: order.items,
-                    receiver: itemList
-                }, [item])[0];
+                var domItem = transItem(order.items[i], order.items, itemList)[0];
                 itemList.appendChild(domItem);
             }
             bindListToDom(order.items, itemList, transItem);
@@ -179,7 +183,7 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
         };
 
         // create item
-        var transItem = function (item) {
+        var transItem = function (item, items) {
 
             var self = this;
 
@@ -196,8 +200,8 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
             var delButton = document.createElement('button');
             delButton.appendChild(document.createTextNode('Del'));
             delButton.addEventListener('click', function () {
-                var index = self.sender.indexOf(item);
-                self.sender.splice(index, 1);
+                var index = items.indexOf(item);
+                items.splice(index, 1);
             });
             li.appendChild(delButton);
 
@@ -275,13 +279,13 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
                     label: 'Apfel'
             }, {
                     label: 'Birne'
+            }, {
+                    label: 'Kirsche'
             }]
             });
             model2.push({
                 label: 'Order 2',
                 items: [{
-                    label: 'Tomate'
-            }, {
                     label: 'Gurke'
             }]
             });
@@ -296,6 +300,10 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
 
             list.deltaSet(model, model2, function (order) {
                 return order.label;
+            }, function (order1, order2) {
+                list.deltaSet(order1.items, order2.items, function (item) {
+                    return item.label;
+                });
             });
 
         }, false);

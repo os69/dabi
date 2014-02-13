@@ -169,11 +169,12 @@ define(["map", "objectid"], function (map, objectid) {
             return function (event, slot) {
 
                 var message = event.message;
+                
                 if (transformation) {
-                    message = transformation.apply({
-                        sender: event.sender,
-                        receiver: this
-                    }, message);
+                    var transformationParams = [];
+                    transformationParams.push.apply(transformationParams,event.message);
+                    transformationParams.push(event.sender, this);
+                    message = transformation.apply(null, transformationParams);
                 }
 
                 var method = this[slot];
