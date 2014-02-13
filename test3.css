@@ -1,0 +1,34 @@
+@keyframes fadeIn {
+    0% {
+        font-size: 0;
+    
+    }
+    100% {
+        font-size: 20px;  
+    }
+}
+
+@keyframes fadeOut {
+    0% {
+        font-size: 20px;
+    
+    }
+    100% {
+        font-size: 0;  
+    }
+}
+
+
+body, input{
+    font-size: 20px;
+}
+
+.fadeIn {
+    animation-name: fadeIn;
+    animation-duration: 2s;
+}
+
+.fadeOut {
+    animation-name: fadeOut;
+    animation-duration: 2s;
+}
