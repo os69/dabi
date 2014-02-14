@@ -37,12 +37,6 @@ define(["map", "objectid"], function (map, objectid) {
         }
     };
 
-    module.processedObjects = function (obj, slot) {
-        var result = {};
-        result[module.mapper.getId(obj) + slot] = null;
-        return result;
-    };
-
     // =======================================================================
     // eventing
     // =======================================================================
@@ -108,6 +102,15 @@ define(["map", "objectid"], function (map, objectid) {
             }
         },
 
+        raiseMethodEvent: function (sender, signal, message, processedObjects) {
+            if (!processedObjects) {
+                var event = new module.Event({});
+                event.addProcessedObject(sender, signal);
+                processedObjects = event.processedObjects;
+            }
+            module.raiseEvent(sender, signal, message, processedObjects);
+        },
+
         deleteObject: function (obj) {
             var sender, signal, slot, receiver;
             // obj as receiver
@@ -153,33 +156,21 @@ define(["map", "objectid"], function (map, objectid) {
             label: 'no method call'
         },
 
-        handler: function (event, slot) {
-            var method = this[slot];
-            if (!method) {
-                module.raiseEvent(this, slot, event.message, event.processedObjects);
-                return;
-            }
-            if (method.__isDecorator__) {
-                method.processedObjects = event.processedObjects;
-            }
-            method.apply(this, event.message);
-        },
-
         generateHandler: function (transformation) {
             return function (event, slot) {
 
                 var message = event.message;
-                
+
                 if (transformation) {
                     var transformationParams = [];
-                    transformationParams.push.apply(transformationParams,event.message);
+                    transformationParams.push.apply(transformationParams, event.message);
                     transformationParams.push(event.sender, this);
                     message = transformation.apply(null, transformationParams);
                 }
 
                 var method = this[slot];
                 if (!method || message === module.methodEventing.noMethodCall) {
-                    module.raiseEvent(this, slot, event.message, event.processedObjects);
+                    module.raiseMethodEvent(this, slot, event.message, event.processedObjects);
                     return;
                 }
 
@@ -205,13 +196,13 @@ define(["map", "objectid"], function (map, objectid) {
                     processedObjects = decorator.processedObjects;
                     decorator.processedObjects = null;
                 } else {
-                    processedObjects = module.processedObjects(this, methodName);
+                    processedObjects = null;
                 }
 
                 var result = method.apply(this, arguments);
 
                 if (arguments.length !== 0) {
-                    module.raiseEvent(this, methodName, arguments, processedObjects);
+                    module.raiseMethodEvent(this, methodName, arguments, processedObjects);
                 }
 
                 return result;
@@ -221,25 +212,10 @@ define(["map", "objectid"], function (map, objectid) {
             obj[methodName] = decorator;
         },
 
-        generateGetterSetter: function (obj, setter) {
-            if (obj[setter]) {
-                return;
-            }
-            var propertyName = setter.slice(3);
-            propertyName = propertyName[0].toLowerCase() + propertyName.slice(1);
-            obj[setter] = function (value) {
-                this[propertyName] = value;
-            };
-            var getter = "get" + setter.slice(3);
-            obj[getter] = function () {
-                return this[propertyName];
-            };
-        },
-
-
         connect: function (sender, signal, receiver, slot, trans1, trans2) {
             if (arguments.length <= 4) {
                 this.connectSingle(sender, signal, receiver, slot);
+                this.connectSingle(receiver, slot, sender, signal);
             } else {
                 if (trans1) {
                     if (trans1 instanceof Function) {
@@ -263,81 +239,9 @@ define(["map", "objectid"], function (map, objectid) {
             this.decorate(sender, signal);
             this.decorate(receiver, slot);
             module.subscribe(sender, signal, receiver, slot, this.generateHandler(transformation));
-        },
-
-        raiseEvent: function (sender, signal, message) {
-            module.raiseEvent(sender, signal, message, module.processedObjects(sender, signal));
         }
 
     };
-
-    // =======================================================================
-    // binding
-    // =======================================================================
-    module.binding = {
-
-        DATA_ATTRIBUTE: '__BindingData',
-
-        bind: function (obj1, property1, obj2, property2, trans1, trans2) {
-            module.methodEventing.connect(obj1, this.setter(obj1, property1), obj2, this.setter(obj2, property2), trans1);
-            module.methodEventing.connect(obj2, this.setter(obj2, property2), obj1, this.setter(obj1, property1), trans2);
-        },
-
-        configure: function (p1, p2) {
-            if (p1 instanceof Array) {
-                this.configureList(p1, p2);
-            } else {
-                this.configureObj(p1, p2);
-            }
-        },
-
-        configureList: function (objects, parameters) {
-            for (var i = 0; i < objects.length; ++i) {
-                var obj = objects[i];
-                this.configureObj(obj, parameters);
-            }
-        },
-
-        configureObj: function (obj, parameters) {
-            var self = this;
-            var bindingData = $.extend({}, parameters);
-            bindingData.obj = obj;
-            obj[this.DATA_ATTRIBUTE] = bindingData;
-            if (bindingData.event) {
-                var registerEventFunction = bindingData.obj[bindingData.event];
-                registerEventFunction.apply(bindingData.obj, [
-
-                    function () {
-                        var value = bindingData.obj[self.getter(bindingData.obj, bindingData.name)].apply(bindingData.obj, []);
-                        module.raiseEvent(bindingData.obj, self.setter(bindingData.obj, bindingData.name), [value], module.processedObjects(bindingData.obj));
-                }]);
-            }
-        },
-
-        getter: function (obj, property) {
-            var bindingData = obj[this.DATA_ATTRIBUTE];
-            if (bindingData) {
-                var getter = bindingData.getter;
-                if (getter) {
-                    return getter;
-                }
-            }
-            return 'get' + property[0].toUpperCase() + property.slice(1);
-        },
-
-        setter: function (obj, property) {
-            var bindingData = obj[this.DATA_ATTRIBUTE];
-            if (bindingData) {
-                var setter = bindingData.setter;
-                if (setter) {
-                    return setter;
-                }
-            }
-            return 'set' + property[0].toUpperCase() + property.slice(1);
-        }
-
-    };
-
 
     return module;
 });

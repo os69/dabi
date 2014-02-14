@@ -47,7 +47,7 @@ define(["map", "eventing"], function (map, eventing) {
             var e1 = list1[i1];
             var e2 = list2[i2];
             if (e1 && e2 && comparator(e1, e2)) {
-                update(e1,e2);
+                update(e1, e2);
                 i1++;
                 i2++;
                 continue;
@@ -59,7 +59,7 @@ define(["map", "eventing"], function (map, eventing) {
             spliceArguments.push.apply(spliceArguments, insertList);
             list1.splice.apply(list1, spliceArguments);
             if (newIndex.i2 < list1.length) {
-                update(list1[newIndex.i2],list2[newIndex.i2]);
+                update(list1[newIndex.i2], list2[newIndex.i2]);
             }
             i1 = i2 = newIndex.i2 + 1;
         }
@@ -91,6 +91,8 @@ define(["map", "eventing"], function (map, eventing) {
 
     var tests = function () {
 
+        test([2], [1, 2, 3]);
+        return;
         test([1, 2, 3, 4], [1, 10, 20, 3, 4]);
 
         // insert
@@ -120,7 +122,7 @@ define(["map", "eventing"], function (map, eventing) {
     //  main
     // =========================================================================
 
-    //tests();
+   // tests();
 
     return {
         deltaSet: deltaSet

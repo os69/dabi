@@ -116,7 +116,7 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
         }, true);
 
         inputField.addEventListener('change', function (event) {
-            methodEventing.raiseEvent(inputField, "val", [inputField.value]);
+            eventing.raiseMethodEvent(inputField, "val", [inputField.value]);
         });
 
     };
@@ -298,11 +298,11 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
             }]
             });
 
-            list.deltaSet(model, model2, function (order) {
-                return order.label;
+            list.deltaSet(model, model2, function (order1, order2) {
+                return order1.label === order2.label;
             }, function (order1, order2) {
-                list.deltaSet(order1.items, order2.items, function (item) {
-                    return item.label;
+                list.deltaSet(order1.items, order2.items, function (item1,item2) {
+                    return item1.label === item2.label;
                 });
             });
 
@@ -330,6 +330,35 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
 
         bindTextToDom(obj, "value", input1);
         bindTextToDom(obj, "value", input2);
+    };
+
+    // =========================================================================
+    //  test ui 4
+    // =========================================================================
+    var testUI4 = function () {
+
+        var Foo = function () {
+            this.init.apply(this, arguments);
+        };
+        Foo.prototype = {
+            init: function (name, number) {
+                this.name = name;
+                this.number = number;
+            },
+            setNumber: function (number) {
+                this.number = number;
+                console.log(this.name + "-->" + this.number);
+            }
+        };
+
+        var f1 = new Foo('f1', 1);
+        var f2 = new Foo('f2', 1);
+        var f = new Foo('f', 1);
+        methodEventing.connect(f1, 'setNumber', f, 'setNumber');
+        methodEventing.connect(f2, 'setNumber', f, 'setNumber');
+
+        f1.setNumber(10);
+
     };
 
     // =========================================================================
