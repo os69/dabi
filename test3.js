@@ -81,19 +81,14 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
             // delete
             var children = domList.children;
             for (i = 0; i < numberDel; ++i) {
-                var element = children.item(index + i);
+                var element = children.item(index);
                 fadeOut(element);
             }
             // insert
-            var refElement = null;
-            if (index > 0) {
-                refElement = children.item(index - 1).nextSibling;
-            } else {
-                refElement = children.item(0);
-            }
+            var refElement = children.item(index);
             for (var i = 2; i < arguments.length - 2; ++i) {
                 var listElement = arguments[i];
-                var transListElement = trans.apply(this, [listElement])[0];
+                var transListElement = trans.apply(this, [listElement, list, domList])[0];
                 if (refElement) {
                     domList.insertBefore(transListElement, refElement);
                 } else {
@@ -117,6 +112,9 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
 
         inputField.addEventListener('change', function (event) {
             eventing.raiseMethodEvent(inputField, "val", [inputField.value]);
+            //var dummyEvent = new event.initEvent({});
+            //dummyEvent.addProcessedObject(obj,setterName(propertyName));
+            //dummyEvent.addProcessedObject(inputField,'val');            
         });
 
     };
@@ -178,6 +176,16 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
                 itemList.appendChild(domItem);
             }
             bindListToDom(order.items, itemList, transItem);
+
+            // button for creating items
+            var createButton = document.createElement('button');
+            createButton.appendChild(document.createTextNode('create item'));
+            li.appendChild(createButton);
+            createButton.addEventListener('click', function () {
+                order.items.push({
+                    label: 'new item'
+                });
+            });
 
             return [li];
         };
@@ -301,7 +309,7 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
             list.deltaSet(model, model2, function (order1, order2) {
                 return order1.label === order2.label;
             }, function (order1, order2) {
-                list.deltaSet(order1.items, order2.items, function (item1,item2) {
+                list.deltaSet(order1.items, order2.items, function (item1, item2) {
                     return item1.label === item2.label;
                 });
             });
@@ -346,6 +354,9 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
                 this.number = number;
             },
             setNumber: function (number) {
+                if(this.name==='f' && number>=10){
+                    throw "Number '"+number+"' exceeds 10!";
+                }
                 this.number = number;
                 console.log(this.name + "-->" + this.number);
             }
@@ -357,7 +368,12 @@ require(["map", "eventing", "list"], function (map, eventing, list) {
         methodEventing.connect(f1, 'setNumber', f, 'setNumber');
         methodEventing.connect(f2, 'setNumber', f, 'setNumber');
 
-        f1.setNumber(10);
+        try{
+            f1.setNumber(10);
+        }catch(e){
+            console.log('Exception',e);
+        }
+        
 
     };
 

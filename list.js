@@ -29,8 +29,8 @@ define(["map", "eventing"], function (map, eventing) {
 
         var find = function (list1, i1, list2, i2) {
             for (var n1 = i1; n1 < list1.length; ++n1) {
-                var n2 = pos(list2, i2 + 1, list1[n1]);
-                if (n2 > 0) {
+                var n2 = pos(list2, i2, list1[n1]);
+                if (n2 >= 0) {
                     return {
                         i1: n1,
                         i2: n2
@@ -92,7 +92,7 @@ define(["map", "eventing"], function (map, eventing) {
     var tests = function () {
 
         test([2], [1, 2, 3]);
-        return;
+       // return;
         test([1, 2, 3, 4], [1, 10, 20, 3, 4]);
 
         // insert
@@ -122,7 +122,7 @@ define(["map", "eventing"], function (map, eventing) {
     //  main
     // =========================================================================
 
-   // tests();
+    //tests();
 
     return {
         deltaSet: deltaSet
