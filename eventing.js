@@ -1,9 +1,17 @@
-define(["map", "objectid"], function (map, objectid) {
+define([], function () {
     "use strict";
 
-    var mapper = new objectid.Mapper();
-
     var module = {};
+
+    // =======================================================================
+    // extend
+    // =======================================================================
+    var extend = function (obj1, obj2) {
+        for (var prop in obj2) {
+            obj1[prop] = obj2[prop];
+        }
+        return obj1;
+    };
 
     // =======================================================================
     // Event
@@ -15,47 +23,185 @@ define(["map", "objectid"], function (map, objectid) {
     module.Event.prototype = {
 
         init: function (data) {
-            $.extend(this, data);
-            if (!this.processedObjects) {
+            extend(this, data);
+            if (!data.processedObjectsBySlot) {
                 // new obj
-                this.processedObjects = {};
+                this.processedObjectsBySlot = {};
             } else {
                 // copy
-                this.processedObjects = $.extend({}, this.processedObjects);
+                this.processedObjectsBySlot = {};
+                for (var slot in data.processedObjectsBySlot) {
+                    this.processedObjectsBySlot[slot] = data.processedObjectsBySlot[slot].slice(0);
+                }
             }
         },
 
         addProcessedObject: function (obj, slot) {
-            this.processedObjects[module.mapper.getId(obj) + slot] = null;
+            var processedObjects = this.processedObjectsBySlot[slot];
+            if (!processedObjects) {
+                processedObjects = [];
+                this.processedObjectsBySlot[slot] = processedObjects;
+            }
+            if (processedObjects.indexOf(obj) >= 0) return;
+            processedObjects.push(obj);
         },
 
         isProcessedObj: function (obj, slot) {
-            if (this.processedObjects[module.mapper.getId(obj) + slot] !== undefined) {
-                return true;
-            }
-            return false;
+            var processedObjects = this.processedObjectsBySlot[slot];
+            if (!processedObjects) return false;
+            if (processedObjects.indexOf(obj) < 0) return false;
+            return true;
         }
     };
 
     // =======================================================================
     // eventing
     // =======================================================================
-    $.extend(module, {
+    var EVENT_PROPERTY = '__eventing__';
 
-        mapper: mapper,
-
-        senderMap: new map.Map({
-            mapper: mapper
-        }),
-
-        receiverMap: new map.Map({
-            mapper: mapper
-        }),
+    extend(module, {
 
         slotId: 0,
 
         generateSlot: function () {
             return "slot" + (module.slotId++);
+        },
+
+        getEventProperties: function (obj) {
+            var eventProperties = obj[EVENT_PROPERTY];
+            if (!eventProperties) {
+                eventProperties = {
+                    receiversBySignal: {},
+                    sendersBySignal: {}
+                };
+                obj[EVENT_PROPERTY] = eventProperties;
+            }
+            return eventProperties;
+        },
+
+        addReceiver: function (sender, signal, receiver, slot, handler) {
+            var eventProperties = this.getEventProperties(sender);
+            var receiversBySlot = eventProperties.receiversBySignal[signal];
+            if (!receiversBySlot) {
+                receiversBySlot = {};
+                eventProperties.receiversBySignal[signal] = receiversBySlot;
+            }
+            var receivers = receiversBySlot[slot];
+            if (!receivers) {
+                receivers = [];
+                receiversBySlot[slot] = receivers;
+            }
+            for (var i = 0; i < receivers.length; i++) {
+                var receiverData = receivers[i];
+                if (receiverData.receiver === receiver) return;
+            }
+            receivers.push({
+                receiver: receiver,
+                handler: handler
+            });
+        },
+
+        removeReceiver: function (sender, signal, receiver, slot) {
+            var eventProperties = this.getEventProperties(sender);
+            var receiversBySlot = eventProperties.receiversBySignal[signal];
+            if (!receiversBySlot) return;
+            var receivers = receiversBySlot[slot];
+            if (!receivers) return;
+            for (var i = 0; i < receivers.length; i++) {
+                var receiverData = receivers[i];
+                if (receiverData.receiver === receiver) {
+                    receivers.splice(i, 1);
+                    return;
+                }
+            }
+        },
+
+        getReceivers: function (sender, signal) {
+            var result = [];
+            var eventProperties = this.getEventProperties(sender);
+            var receiversBySlot = eventProperties.receiversBySignal[signal];
+            if (!receiversBySlot) {
+                return result;
+            }
+            for (var slot in receiversBySlot) {
+                var receivers = receiversBySlot[slot];
+                for (var i = 0; i < receivers.length; i++) {
+                    var receiverData = receivers[i];
+                    result.push({
+                        receiver: receiverData.receiver,
+                        slot: slot,
+                        handler: receiverData.handler
+                    });
+                }
+            }
+            return result;
+        },
+
+        getAllReceivers: function (sender) {
+            var result = [];
+            var eventProperties = this.getEventProperties(sender);
+            for (var signal in eventProperties.receiversBySignal) {
+                var receiversBySlot = eventProperties.receiversBySignal[signal];
+                for (var slot in receiversBySlot) {
+                    var receivers = receiversBySlot[slot];
+                    for (var i = 0; i < receivers.length; i++) {
+                        var receiverData = receivers[i];
+                        result.push({
+                            signal: signal,
+                            slot: slot,
+                            receiver: receiverData.receiver
+                        });
+                    }
+                }
+            }
+            return result;
+        },
+
+        addSender: function (sender, signal, receiver, slot) {
+            var eventProperties = this.getEventProperties(receiver);
+            var sendersBySlot = eventProperties.sendersBySignal[signal];
+            if (!sendersBySlot) {
+                sendersBySlot = {};
+                eventProperties.sendersBySignal[signal] = sendersBySlot;
+            }
+            var senders = sendersBySlot[slot];
+            if (!senders) {
+                senders = [];
+                sendersBySlot[slot] = senders;
+            }
+            if (senders.indexOf(sender) >= 0) return;
+            senders.push(sender);
+        },
+
+        removeSender: function (sender, signal, receiver, slot) {
+            var eventProperties = this.getEventProperties(receiver);
+            var sendersBySlot = eventProperties.sendersBySignal[signal];
+            if (!sendersBySlot) return;
+            var senders = sendersBySlot[slot];
+            if (!senders) return;
+            var index = senders.indexOf(sender);
+            if (index < 0) return;
+            senders.splice(index, 1);
+        },
+
+        getAllSenders: function (receiver) {
+            var result = [];
+            var eventProperties = this.getEventProperties(receiver);
+            for (var signal in eventProperties.sendersBySignal) {
+                var sendersBySlot = eventProperties.sendersBySignal[signal];
+                for (var slot in sendersBySlot) {
+                    var senders = sendersBySlot[slot];
+                    for (var i = 0; i < senders.length; i++) {
+                        var sender = senders[i];
+                        result.push({
+                            sender: sender,
+                            signal: signal,
+                            slot: slot
+                        });
+                    }
+                }
+            }
+            return result;
         },
 
         subscribe: function (sender, signal, receiver, slot, handler) {
@@ -70,73 +216,56 @@ define(["map", "objectid"], function (map, objectid) {
                 }
             }
 
-            // register event handler
-            module.receiverMap.put([sender, signal, receiver, slot], handler);
-            module.senderMap.put([receiver, sender, signal, slot], handler);
+            // register receiver in sender obj
+            this.addReceiver(sender, signal, receiver, slot, handler);
+
+            // register sender in receiver obj
+            this.addSender(sender, signal, receiver, slot, handler);
 
         },
 
         unSubscribe: function (sender, signal, receiver, slot) {
-            module.receiverMap.del([sender, signal, receiver, slot]);
-            module.senderMap.del([receiver, sender, signal, slot]);
+
+            // deregister receiver in sender obj
+            this.removeReceiver(sender, signal, receiver, slot);
+
+            // deregister sender in receiver obj
+            this.removeSender(sender, signal, receiver, slot);
+
         },
 
-        raiseEvent: function (sender, signal, message, processedObjects) {
+        raiseEvent: function (sender, signal, message, processedObjectsBySlot) {
+
             var event = new module.Event({
                 sender: sender,
                 signal: signal,
                 message: message,
-                processedObjects: processedObjects
+                processedObjectsBySlot: processedObjectsBySlot
             });
-            var receivers = module.receiverMap.get([sender, signal]);
-            for (var i = 0; i < receivers.length; ++i) {
+
+            var receivers = this.getReceivers(sender, signal);
+            for (var i = 0; i < receivers.length; i++) {
                 var receiverData = receivers[i];
-                var receiver = receiverData.keys[0];
-                var slot = receiverData.keys[1];
-                var handler = receiverData.value;
-                if (event.isProcessedObj(receiver, slot)) {
+                if (event.isProcessedObj(receiverData.receiver, receiverData.slot)) {
                     continue;
                 }
-                event.addProcessedObject(receiver, slot);
-                handler.apply(receiver, [event, slot]);
+                event.addProcessedObject(receiverData.receiver, receiverData.slot);
+                receiverData.handler.apply(receiverData.receiver, [event, receiverData.slot]);
             }
-        },
 
-        raiseMethodEvent: function (sender, signal, message, processedObjects) {
-            if (!processedObjects) {
-                var event = new module.Event({});
-                event.addProcessedObject(sender, signal);
-                processedObjects = event.processedObjects;
-            }
-            module.raiseEvent(sender, signal, message, processedObjects);
         },
 
         deleteObject: function (obj) {
-            var sender, signal, slot, receiver;
-            // obj as receiver
-            receiver = obj;
-            var senders = module.senderMap.get([receiver]);
-            for (var i = 0; i < senders.length; ++i) {
-                var senderData = senders[i];
-                sender = senderData.keys[0];
-                signal = senderData.keys[1];
-                slot = senderData.keys[2];
-                module.receiverMap.del([sender, signal, receiver, slot]);
-            }
-            module.senderMap.del([receiver]);
-            // obj as sender
-            sender = obj;
-            var receivers = module.receiverMap.get([sender]);
-            for (i = 0; i < receivers.length; ++i) {
+            var receivers = this.getAllReceivers(obj);
+            for (var i = 0; i < receivers.length; i++) {
                 var receiverData = receivers[i];
-                signal = receiverData.keys[0];
-                receiver = receiverData.keys[1];
-                slot = receiverData.keys[2];
-                module.senderMap.del([receiver, sender, signal, slot]);
+                this.unSubscribe(obj, receiverData.signal, receiverData.receiver, receiverData.slot);
             }
-            module.receiverMap.del([sender]);
-            // delete obj from id mapper
-            module.receiverMap.mapper.deleteObject(obj);
+            var senders = this.getAllSenders(obj);
+            for (var j = 0; j < senders.length; j++) {
+                var senderData = senders[j];
+                this.unSubscribe(senderData.sender, senderData.signal, obj, senderData.slot);
+            }
         },
 
         methodCallHandler: function (event, slot) {
@@ -150,7 +279,7 @@ define(["map", "objectid"], function (map, objectid) {
     // method eventing
     // =======================================================================
 
-    module.methodEventing = {
+    extend(module, {
 
         noMethodCall: {
             label: 'no method call'
@@ -169,13 +298,13 @@ define(["map", "objectid"], function (map, objectid) {
                 }
 
                 var method = this[slot];
-                if (!method || message === module.methodEventing.noMethodCall) {
-                    module.raiseMethodEvent(this, slot, event.message, event.processedObjects);
+                if (!method || message === module.noMethodCall) {
+                    module.raiseMethodEvent(this, slot, event.message, event.processedObjectsBySlot);
                     return;
                 }
 
                 if (method.__isDecorator__) {
-                    method.processedObjects = event.processedObjects;
+                    method.processedObjectsBySlot = event.processedObjectsBySlot;
                 }
                 method.apply(this, message);
             };
@@ -191,18 +320,18 @@ define(["map", "objectid"], function (map, objectid) {
             }
             var decorator = function () {
 
-                var processedObjects;
-                if (decorator.processedObjects) {
-                    processedObjects = decorator.processedObjects;
-                    decorator.processedObjects = null;
+                var processedObjectsBySlot;
+                if (decorator.processedObjectsBySlot) {
+                    processedObjectsBySlot = decorator.processedObjectsBySlot;
+                    decorator.processedObjectsBySlot = null;
                 } else {
-                    processedObjects = null;
+                    processedObjectsBySlot = null;
                 }
 
                 var result = method.apply(this, arguments);
 
                 if (arguments.length !== 0) {
-                    module.raiseMethodEvent(this, methodName, arguments, processedObjects);
+                    module.raiseMethodEvent(this, methodName, arguments, processedObjectsBySlot);
                 }
 
                 return result;
@@ -239,9 +368,18 @@ define(["map", "objectid"], function (map, objectid) {
             this.decorate(sender, signal);
             this.decorate(receiver, slot);
             module.subscribe(sender, signal, receiver, slot, this.generateHandler(transformation));
+        },
+
+        raiseMethodEvent: function (sender, signal, message, processedObjectsBySlot) {
+            if (!processedObjectsBySlot) {
+                var event = new module.Event({});
+                event.addProcessedObject(sender, signal);
+                processedObjectsBySlot = event.processedObjectsBySlot;
+            }
+            module.raiseEvent(sender, signal, message, processedObjectsBySlot);
         }
 
-    };
+    });
 
     return module;
 });

@@ -1,0 +1,10 @@
+Hi line1
+line2
+#log step start "Step 1"
+line 3
+line 4
+#log step start "Step 2"
+line 4a
+#log step end "Step 2"
+#log step end "Step 1"
+line 5

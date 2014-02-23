@@ -1,4 +1,4 @@
-define(["map", "eventing"], function (map, eventing) {
+define([], function () {
     "use strict";
 
     var $ = window.$;

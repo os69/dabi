@@ -1,100 +1,317 @@
-require(["map", "eventing"], function (map, eventing) {
+require(["map", "eventing", "list", "dombinding"], function (map, eventing, list, dombinding) {
     "use strict";
 
     var $ = window.$;
     var console = window.console;
+    var document = window.document;
 
-    var methodEventing = eventing.methodEventing;
+    // =========================================================================
+    //  animation
+    // =========================================================================
+//    var fadeIn = function (element) {
+//        return;
+//        var listener = function (event) {
+//            if (event.animationName === 'fadeIn') {
+//                this.classList.remove('fadeIn');
+//                this.removeEventListener("animationend", listener, false);
+//            }
+//        };
+//        element.addEventListener("animationend", listener, false);
+//        element.classList.add('fadeIn');
+//    };
+//
+//    var fadeOut = function (element) {
+//        element.parentNode.removeChild(element);
+//        return;
+//        var listener = function (event) {
+//            if (event.animationName === 'fadeOut') {
+//                this.classList.remove('fadeOut');
+//                this.removeEventListener("animationend", listener, false);
+//                this.parentNode.removeChild(this);
+//            }
+//        };
+//        element.addEventListener("animationend", listener, false);
+//        element.classList.add('fadeOut');
+//    };
+//
+//    var testAnimation = function () {
+//        var div = document.createElement('div');
+//        document.body.appendChild(div);
+//        div.appendChild(document.createTextNode('Balduin'));
+//        div.addEventListener("animationend", function (event) {
+//            if (event.animationName === 'fadeIn') {
+//                fadeOut(div);
+//            }
+//        }, false);
+//        fadeIn(div);
+//    };
+
+
 
     // =========================================================================
     //  test ui 
     // =========================================================================
-    var testUI = function () {
+    var testUI1 = function () {
 
-        $("body").append("<h1>V1</h1>");
-        var v1 = $("<ul></ul>");
-        $("body").append(v1);
+        // viewer
+        var viewer = document.createElement('ul');
+        document.body.appendChild(viewer);
 
-        $("body").append("<h1>V2</h1>");
-        var v2 = $("<ul></ul>");
-        $("body").append(v2);
-
+        // model
         var model = [];
 
-        var transItem = function (item) {
-            
-            var input = $("<input></input>");
-            input.val(item.label);
-            methodEventing.connect(item, "setLabel", input, "val");
-            input.change(function () {
-                methodEventing.raiseEvent(input, "val", [input.val()]);
-            });
+        // bind
+        dombinding.bindList(model, viewer, function (element) {
+            var li = document.createElement('li');
+            li.appendChild(document.createTextNode(element));
+            return [li];
+        });
 
-            var result = $("<li></li>");
-            result.append(input);
-            var delButton = $("<button>Delete</button>");
-            delButton.click(function () {
-                item.itemList.splice(item.itemList.indexOf(item), 1);
-            });
-            result.append(delButton);
+        model.push('Apfel');
+        model.push('Banane');
+        model.push('Orange');
 
-            return [result];
-        };
+        var button = document.createElement('button');
+        document.body.appendChild(button);
+        button.appendChild(document.createTextNode('Click'));
+        button.addEventListener('click', function () {
 
-        var transItemList = function (itemList) {
+            var newList = ["Esel", 'Apfel', 'Birne', 'Orange'];
+            list.deltaSet(model, newList);
 
-            var transformedItemList = $("<ul></ul>");
-            $.each(itemList, function (i, item) {
-                item.itemList = itemList;
-                transformedItemList.append(transItem(item)[0]);
-            });
-            methodEventing.connect(itemList, "push", transformedItemList, "append", transItem);
-            methodEventing.connect(itemList, "splice", transformedItemList, "remove", function (from, howMany) {
-                this.receiver.children().slice(from,from+howMany).remove();
-                return methodEventing.noMethodCall;
-            });
+        }, false);
 
-
-            var result = $("<li></li>");
-
-            result.append(transformedItemList);
-
-            var button = $("<button>Add</button>");
-            result.append(button);
-            button.click(function () {
-                itemList.push(new Item("test"));
-            });
-
-            return [result];
-
-        };
-
-        methodEventing.connect(model, "push", v1, "append", transItemList);
-        methodEventing.connect(model, "push", v2, "append", transItemList);
-
-        var Item = function () {
-            this.init.apply(this, arguments);
-        };
-        Item.prototype = {
-            init: function (label) {
-                this.label = label;
-            },
-            setLabel: function (label) {
-                this.label = label;
-            }
-        };
-        var l1 = [new Item("Apfel"), new Item("Birne")];
-        var l2 = [new Item("Erbes"), new Item("Tomate")];
-        model.push(l1);
-        model.push(l2);
-        l1.push(new Item("Kirsche"));
 
     };
 
+    // =========================================================================
+    //  test ui 2
+    // =========================================================================
+    var testUI2 = function () {
+
+        // create order
+        var transOrder = function (order) {
+
+            // header
+            var li = document.createElement('li');
+            li.appendChild(document.createTextNode(order.label));
+
+            // items
+            var itemList = document.createElement('ul');
+            li.appendChild(itemList);
+            dombinding.bindList(order.items, itemList, transItem);
+
+            // button for creating items
+            var createButton = document.createElement('button');
+            createButton.appendChild(document.createTextNode('create item'));
+            li.appendChild(createButton);
+            createButton.addEventListener('click', function () {
+                order.items.push({
+                    label: 'new item'
+                });
+            });
+
+            return [li];
+        };
+
+        // create item
+        var transItem = function (item, items) {
+
+            var self = this;
+
+            var li = document.createElement('li');
+
+            // input
+            var input = document.createElement('input');
+            input.setAttribute('type', 'text');
+            input.value = item.label;
+            li.appendChild(input);
+            dombinding.bindInputField(item, 'label', input);
+
+            // del button
+            var delButton = document.createElement('button');
+            delButton.appendChild(document.createTextNode('Del'));
+            delButton.addEventListener('click', function () {
+                var index = items.indexOf(item);
+                items.splice(index, 1);
+            });
+            li.appendChild(delButton);
+
+            return [li];
+        };
+
+        // viewer 1
+        var h1 = document.createElement('h1');
+        h1.appendChild(document.createTextNode('View 1'));
+        document.body.appendChild(h1);
+        var viewer1 = document.createElement('ul');
+        document.body.appendChild(viewer1);
+
+        // viewer 2
+        h1 = document.createElement('h1');
+        h1.appendChild(document.createTextNode('View 2'));
+        document.body.appendChild(h1);
+        var viewer2 = document.createElement('ul');
+        document.body.appendChild(viewer2);
+
+        // model
+        var model = [];
+
+        // bind
+        dombinding.bindList(model, viewer1, transOrder);
+        dombinding.bindList(model, viewer2, transOrder);
+
+        // add some elements
+        model.push({
+            label: 'Order 1',
+            items: [{
+                label: 'Apfel'
+            }, {
+                label: 'Birne'
+            }]
+        });
+        model.push({
+            label: 'Order 2',
+            items: [{
+                label: 'Tomate'
+            }, {
+                label: 'Gurke'
+            }]
+        });
+
+        var button1 = document.createElement('button');
+        document.body.appendChild(button1);
+        button1.appendChild(document.createTextNode('Click'));
+        button1.addEventListener('click', function () {
+
+            model[0].items.push({
+                label: 'Pfirsich'
+            });
+
+            model.push({
+                label: 'Order 3',
+                items: [{
+                    label: 'Eiche'
+                }, {
+                    label: 'Birke'
+                }]
+            });
+
+        }, false);
+
+        var button2 = document.createElement('button');
+        document.body.appendChild(button2);
+        button2.appendChild(document.createTextNode('Click'));
+        button2.addEventListener('click', function () {
+
+            var model2 = [];
+            model2.push({
+                label: 'Order 1',
+                items: [{
+                    label: 'Apfel'
+            }, {
+                    label: 'Birne'
+            }, {
+                    label: 'Kirsche'
+            }]
+            });
+            model2.push({
+                label: 'Order 2',
+                items: [{
+                    label: 'Gurke'
+            }]
+            });
+            model2.push({
+                label: 'Order 3',
+                items: [{
+                    label: 'Birke'
+            }, {
+                    label: 'Esche'
+            }]
+            });
+
+            list.deltaSet(model, model2, function (order1, order2) {
+                return order1.label === order2.label;
+            }, function (order1, order2) {
+                list.deltaSet(order1.items, order2.items, function (item1, item2) {
+                    return item1.label === item2.label;
+                });
+            });
+
+        }, false);
+
+
+    };
+
+    // =========================================================================
+    //  test ui 3
+    // =========================================================================
+    var testUI3 = function () {
+
+        var input1 = document.createElement('input');
+        input1.setAttribute('type', 'text');
+        document.body.appendChild(input1);
+
+        var input2 = document.createElement('input');
+        input2.setAttribute('type', 'text');
+        document.body.appendChild(input2);
+
+        var output1 = document.createElement('div');
+        document.body.appendChild(output1);
+
+        var output2 = document.createElement('div');
+        document.body.appendChild(output2);
+
+        var obj = {
+            value: 0
+        };
+
+        dombinding.bindInputField(obj, "value", input1);
+        dombinding.bindInputField(obj, "value", input2);
+        dombinding.bindText(obj,"value",output1);
+        dombinding.bindText(obj,"value",output2);
+    };
+
+    // =========================================================================
+    //  test ui 4
+    // =========================================================================
+    var testUI4 = function () {
+
+        var Foo = function () {
+            this.init.apply(this, arguments);
+        };
+        Foo.prototype = {
+            init: function (name, number) {
+                this.name = name;
+                this.number = number;
+            },
+            setNumber: function (number) {
+                if (this.name === 'f' && number >= 10) {
+                    throw "Number '" + number + "' exceeds 10!";
+                }
+                this.number = number;
+                console.log(this.name + "-->" + this.number);
+            }
+        };
+
+        var f1 = new Foo('f1', 1);
+        var f2 = new Foo('f2', 1);
+        var f = new Foo('f', 1);
+        eventing.connect(f1, 'setNumber', f, 'setNumber');
+        eventing.connect(f2, 'setNumber', f, 'setNumber');
+
+        try {
+            f1.setNumber(10);
+        } catch (e) {
+            console.log('Exception', e);
+        }
+
+
+    };
 
     // =========================================================================
     //  main
     // =========================================================================
-    testUI();
+    testUI2();
 
 });
