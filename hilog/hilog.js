@@ -1,11 +1,11 @@
 require.config({
     baseUrl: "../",
     paths: {
-        "map": "dabi/map",
-        "objectid": "dabi/objectid",
-        "eventing": "dabi/eventing",
-        "dombinding": "dabi/dombinding",
-        "list": "dabi/list"
+        "map": "map",
+        "objectid": "objectid",
+        "eventing": "eventing",
+        "dombinding": "dombinding",
+        "list": "list"
     },
 });
 
@@ -57,9 +57,14 @@ define(["eventing", "dombinding", "list"], function (eventing, dombinding, list)
     var transLogEntry = function (logEntry) {
 
         var node = document.createElement('li');
+
         var messageNode = document.createTextNode('');
         node.appendChild(messageNode);
         dombinding.bindText(logEntry, 'message', messageNode);
+
+        var severityNode = document.createTextNode('');
+        node.appendChild(severityNode);
+        dombinding.bindText(logEntry, 'severity', severityNode);
 
         if (logEntry instanceof ProcessStepLogEntry) {
 
@@ -83,6 +88,10 @@ define(["eventing", "dombinding", "list"], function (eventing, dombinding, list)
         return [node];
     };
 
+    var SEVERITY_INFO = 1;
+    var SEVERITY_WARNING = 2;
+    var SEVERITY_ERROR = 3;
+
     // =======================================================================
     // log entry: base class
     // =======================================================================
@@ -95,13 +104,25 @@ define(["eventing", "dombinding", "list"], function (eventing, dombinding, list)
         init: function (properties) {
             properties = properties || {};
             this.message = properties.message || "";
+            this.severity = SEVERITY_INFO;
             this.parent = null;
+        },
+
+        setMessage: function (message) {
+            this.message = message;
+        },
+
+        setSeverity: function (severity) {
+            if (severity < this.severity) return;
+            this.severity = severity;
+            if (this.parent && this.parent.severity < this.severity) this.parent.setSeverity(this.severity);
         },
 
         set: function (logEntry) {
             this.setMessage(logEntry.message);
+            this.setSeverity(logEntry.severity);
         }
-        
+
     };
 
     // =======================================================================
@@ -112,6 +133,11 @@ define(["eventing", "dombinding", "list"], function (eventing, dombinding, list)
     };
 
     MessageLogEntry.prototype = extend(new LogEntry(), {
+
+        parse: function (line) {
+            this.message = line.trim();
+            if (line.indexOf('error') >= 0) this.setSeverity(SEVERITY_ERROR);
+        }
 
     });
 
@@ -129,8 +155,13 @@ define(["eventing", "dombinding", "list"], function (eventing, dombinding, list)
             this.children = [];
         },
 
+        parse: function (line, tokens) {
+            this.message = tokens[3];
+        },
+
         append: function (logEntry) {
             this.children.push(logEntry);
+            if (this.severity < logEntry.severity) this.setSeverity(logEntry.severity);
             logEntry.parent = this;
         },
 
@@ -152,11 +183,13 @@ define(["eventing", "dombinding", "list"], function (eventing, dombinding, list)
     // =======================================================================
     var parseLogLine = function (parentLogEntry, line) {
 
+        var logEntry;
+
         // no log command -> create message log entry
         if (line.indexOf(COMMAND_PREFIX) !== 0) {
-            parentLogEntry.append(new MessageLogEntry({
-                message: line
-            }));
+            logEntry = new MessageLogEntry();
+            logEntry.parse(line);
+            parentLogEntry.append(logEntry);
             return parentLogEntry;
         }
 
@@ -165,11 +198,10 @@ define(["eventing", "dombinding", "list"], function (eventing, dombinding, list)
 
         // command: step start
         if (tokens[1] === 'step' && tokens[2] === 'start') {
-            var stepLogEntry = new ProcessStepLogEntry({
-                message: tokens[3]
-            });
-            parentLogEntry.append(stepLogEntry);
-            return stepLogEntry;
+            logEntry = new ProcessStepLogEntry();
+            logEntry.parse(line, tokens);
+            parentLogEntry.append(logEntry);
+            return logEntry;
         }
 
         // command: step stop
@@ -178,10 +210,9 @@ define(["eventing", "dombinding", "list"], function (eventing, dombinding, list)
         }
 
         // default: create message log entry
-        parentLogEntry.append(new MessageLogEntry({
-            message: line
-        }));
-
+        logEntry = new MessageLogEntry();
+        logEntry.parse(line, tokens);
+        parentLogEntry.append(logEntry);
         return parentLogEntry;
     };
 

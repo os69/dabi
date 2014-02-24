@@ -81,6 +81,5 @@ define(["eventing"], function (eventing) {
 
     };
 
-
     return module;
 });

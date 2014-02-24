@@ -4,7 +4,7 @@ line2
 line 3
 line 4
 #log step start "Step 2"
-line 4a
+line 4a error
 #log step end "Step 2"
 #log step end "Step 1"
 line 5
