@@ -85,7 +85,7 @@ define(["eventing", "dombinding", "list"], function (eventing, dombinding, list)
             dombinding.bindList(logEntry.children, subList, transLogEntry);
         }
 
-        return [node];
+        return node;
     };
 
     var SEVERITY_INFO = 1;
@@ -238,7 +238,7 @@ define(["eventing", "dombinding", "list"], function (eventing, dombinding, list)
     var rootLogEntry = new ProcessStepLogEntry();
     var rootNode = document.createElement('ul');
     document.body.appendChild(rootNode);
-    rootNode.appendChild(transLogEntry(rootLogEntry)[0]);
+    dombinding.bindObject(rootLogEntry,rootNode,transLogEntry);
 
     var buttonNode = document.createElement('button');
     document.body.appendChild(buttonNode);

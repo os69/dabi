@@ -1,0 +1,19 @@
+body {
+    background-color: #1E1E20;
+    color: gray;
+    font-family: Sans;
+    font-size: 15px;
+}
+
+.i1 {
+    display: inline-block;
+    background-color: red;
+    vertical-align: middle;
+    width: 10px;
+    height: 10px;
+    border-radius: 4px;
+}
+.i2 {
+    font-size: 15px;
+    vertical-align: middle;
+}

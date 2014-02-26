@@ -16,14 +16,20 @@ define(["eventing"], function (eventing) {
         };
     };
 
-    module.bindList = function (list, domList, trans) {
+    module.bindObject = function (obj, objNode, transObj) {
+        objNode.appendChild(transObj(obj));
+    };
 
+    module.bindList = function (list, domList, transItem) {
+        
         for (var j = 0; j < list.length; j++) {
             var element = list[j];
-            domList.appendChild(trans(element,list,domList)[0]);
+            domList.appendChild(transItem(element, list, domList));
         }
-        
-        eventing.connect(list, "push", domList, "appendChild", trans);
+
+        eventing.connect(list, "push", domList, "appendChild", function () {
+            return [transItem.apply(this, arguments)];
+        });
 
         eventing.connect(list, "splice", domList, "splice", function () {
             // parse arguments
@@ -41,7 +47,7 @@ define(["eventing"], function (eventing) {
             var refElement = children.item(index);
             for (var i = 2; i < arguments.length - 2; ++i) {
                 var listElement = arguments[i];
-                var transListElement = trans.apply(this, [listElement, list, domList])[0];
+                var transListElement = transItem.apply(this, [listElement, list, domList]);
                 if (refElement) {
                     domList.insertBefore(transListElement, refElement);
                 } else {
@@ -55,6 +61,8 @@ define(["eventing"], function (eventing) {
 
     module.bindInputField = function (obj, propertyName, inputField) {
 
+        inputField.value = obj[propertyName];
+        
         generateSetter(obj, propertyName);
 
         eventing.connect(obj, setterName(propertyName), inputField, "val", function (val) {
@@ -71,7 +79,7 @@ define(["eventing"], function (eventing) {
     module.bindText = function (obj, propertyName, textNode) {
 
         textNode.textContent = obj[propertyName];
-        
+
         generateSetter(obj, propertyName);
 
         eventing.connect(obj, setterName(propertyName), textNode, "val", function (val, obj, textNode) {

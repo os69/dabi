@@ -7,6 +7,7 @@
 
     <title>HiLog</title>
 
+    <link href="hilog.css" rel="stylesheet" media="screen">
     <script src="../../lib/jquery-1.7.2.min.js"></script>
     <script src="../../lib/require.js" data-main="hilog.js"></script>
 
@@ -15,12 +16,27 @@
 <body>
 
 
-    <h1>Test</h1>
+    <div class="i0">
+        <span class="i1"></span>
+        <span class="i2">ist blöddf fd fd fd gf gf gf gf gf gf gf gf gf g gf gf gf hgf hgf hg h h hg h hg hg hg</span>
+    </div>
+    <div class="i0">
+        <span class="i1"></span>
+        <span class="i2">ist blöd</span>
+    </div>
 
+    <div data-define-trans="logEntry">
+        <span data-bind-attr="severity"></span>
+        <span data-bind-attr="message"></span>
+        <ul data-bind-list-attr="children">
+            <li>
+                <div data-ref-trans="logEntry"> </div>
+            </li>
+        </ul>
+    </div>
 
-
+    <div data-bind-obj="rootLogEntry" data-trans="logEntry"></div>
     
-
 </body>
 
 </html>
