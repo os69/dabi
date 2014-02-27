@@ -89,5 +89,9 @@ define(["eventing"], function (eventing) {
 
     };
 
+    module.runInterpreter = function(){
+        alert("Hallo");    
+    };
+    
     return module;
 });

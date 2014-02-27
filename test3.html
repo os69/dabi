@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+
+    <LINK href="test2.css" rel="stylesheet" type="text/css">
+    <script src="../lib/jquery-1.7.2.min.js" type="text/javascript"></script>
+    <script src="../lib/require.js"></script>
+
+    <title>Binding Declarative Approach</title>
+
+</head>
+
+<body>
+
+    <h1>Test template</h1>
+
+    <div data-template="SalesOrder">
+        <span data-bind-attr="id"></span>
+        <span data-bind-attr="description"></span>
+    </div>
+
+    <div data-bind-obj="obj1" data-template="SalesOrder"></div>
+
+    <script>
+        require(['dombinding','test3'],function(dombinding,test3){            
+            document.addEventListener('DOMContentLoaded',function(){
+                alert("egon");
+            });
+            test3.testUI1();
+            $(document).ready(function(){
+                alert("egon2");
+            });
+        });
+    </script>
+
+</body>
+
+</html>
