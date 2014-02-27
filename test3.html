@@ -6,7 +6,7 @@
 
     <LINK href="test2.css" rel="stylesheet" type="text/css">
     <script src="../lib/jquery-1.7.2.min.js" type="text/javascript"></script>
-    <script src="../lib/require.js"></script>
+    <script src="../lib/require.js" data-main="test3.js"></script>
 
     <title>Binding Declarative Approach</title>
 
@@ -14,26 +14,26 @@
 
 <body>
 
-    <h1>Test template</h1>
-
     <div data-template="SalesOrder">
+        <h1>Sales Order</h1>
+        <h2>Main</h2>
         <span data-bind-attr="id"></span>
+        <span data-bind-attr="description"></span>
+        <h2>Status</h2>
+        <div data-bind-obj="status" data-template="Status"></div>
+        <h2>Items</h2>
+        <div data-bind-list="items" data-template="Item"></div>
+    </div>
+
+    <div data-template="Status">
+        <span data-bind-attr="status"></span>
         <span data-bind-attr="description"></span>
     </div>
 
-    <div data-bind-obj="obj1" data-template="SalesOrder"></div>
+    <li data-template="Item">
+        <span data-bind-attr="description"></span>
+    </li>
 
-    <script>
-        require(['dombinding','test3'],function(dombinding,test3){            
-            document.addEventListener('DOMContentLoaded',function(){
-                alert("egon");
-            });
-            test3.testUI1();
-            $(document).ready(function(){
-                alert("egon2");
-            });
-        });
-    </script>
 
 </body>
 

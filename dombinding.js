@@ -20,8 +20,10 @@ define(["eventing"], function (eventing) {
         objNode.appendChild(transObj(obj));
     };
 
+    // transitem <-> trans li generator
+    
     module.bindList = function (list, domList, transItem) {
-        
+
         for (var j = 0; j < list.length; j++) {
             var element = list[j];
             domList.appendChild(transItem(element, list, domList));
@@ -62,7 +64,7 @@ define(["eventing"], function (eventing) {
     module.bindInputField = function (obj, propertyName, inputField) {
 
         inputField.value = obj[propertyName];
-        
+
         generateSetter(obj, propertyName);
 
         eventing.connect(obj, setterName(propertyName), inputField, "val", function (val) {
@@ -89,9 +91,73 @@ define(["eventing"], function (eventing) {
 
     };
 
-    module.runInterpreter = function(){
-        alert("Hallo");    
+    module.cloneNode = function (node, obj) {
+
+        var transformationName;
+        var cloneNode = node.cloneNode();
+
+        if (cloneNode.hasAttribute) {
+            if (node.hasAttribute('data-template')) cloneNode.removeAttribute('data-template');
+            if (node.hasAttribute('data-bind-obj')) {
+                cloneNode.removeAttribute('data-bind-obj');
+                var objectName = node.getAttribute('data-bind-obj');
+                transformationName = node.getAttribute('data-template');                
+                module.bindObject(obj[objectName], cloneNode, module.transformations[transformationName]);
+            }
+            if(node.hasAttribute('data-bind-attr')){
+                cloneNode.removeAttribute('data-bind-attr');
+                var attributeName = node.getAttribute('data-bind-attr');
+                module.bindText(obj,attributeName,cloneNode);
+            }
+            if(node.hasAttribute('data-bind-list')){
+                cloneNode.removeAttribute('data-bind-list');
+                var listName = node.getAttribute('data-bind-list');
+                transformationName = node.getAttribute('data-template');                
+                module.bindList(obj[listName],cloneNode, module.transformations[transformationName]);
+            }            
+        }
+
+        for (var i = 0; i < node.childNodes.length; i++) {
+            var childNode = node.childNodes[i];
+            var cloneChildNode = module.cloneNode(childNode, obj);
+            cloneNode.appendChild(cloneChildNode);
+        }
+
+        return cloneNode;
     };
-    
+
+    module.parseTransformationFromTemplate = function (node) {
+        return function (obj) {
+            return module.cloneNode(node, obj);
+        };
+    };
+
+    module.runInterpreter = function () {
+        // parse transformations
+        module.transformations = {};
+        var templateNodes = document.querySelectorAll('[data-template]:not([data-bind-obj]):not([data-bind-list])');
+        for (var i = 0; i < templateNodes.length; i++) {
+            var templateNode = templateNodes.item(i);
+            module.transformations[templateNode.getAttribute('data-template')] = module.parseTransformationFromTemplate(templateNode);
+            templateNode.parentNode.removeChild(templateNode);
+        }
+
+        //  
+    };
+
+    module.parseDocument = function (done) {
+        var onLoaded = function () {
+            document.removeEventListener('DOMContentLoaded', onLoaded, false);
+            module.runInterpreter();
+            done();
+        };
+        if (document.readyState === 'complete') {
+            module.runInterpreter();
+            done();
+            return;
+        }
+        document.addEventListener('DOMContentLoaded', onLoaded, false);
+    };
+
     return module;
 });
