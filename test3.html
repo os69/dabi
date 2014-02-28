@@ -14,24 +14,38 @@
 
 <body>
 
-    <div data-template="SalesOrder">
+    <div data-def-template="SalesOrder">
         <h1>Sales Order</h1>
         <h2>Main</h2>
-        <span data-bind-attr="id"></span>
-        <span data-bind-attr="description"></span>
-        <h2>Status</h2>
-        <div data-bind-obj="status" data-template="Status"></div>
-        <h2>Items</h2>
-        <div data-bind-list="items" data-template="Item"></div>
+        <span data-bind-attribute="id"></span>
+        <input data-bind-attribute="description" type="text">
+        <span data-bind-attribute="description"></span>
+        <h2>Status 1</h2>
+        <div data-bind-object="status" data-template="Status"></div>
+        <h2>Status 2</h2>
+        <div data-bind-object="status">
+            status:
+            <span data-bind-attribute="status"></span>
+            descr:
+            <span data-bind-attribute="description"></span>
+        </div>
+        <h2>Items 1</h2>
+        <ul data-bind-list="items" data-template="Item"></ul>
+        <h2>Items 2</h2>
+        <ul data-bind-list="items">
+            <li>
+                <span data-bind-attribute="description"></span>
+            </li>
+        </ul>
     </div>
 
-    <div data-template="Status">
-        <span data-bind-attr="status"></span>
-        <span data-bind-attr="description"></span>
+    <div data-def-template="Status">
+        <span data-bind-attribute="status"></span>
+        <span data-bind-attribute="description"></span>
     </div>
 
-    <li data-template="Item">
-        <span data-bind-attr="description"></span>
+    <li data-def-template="Item">
+        <span data-bind-attribute="description"></span>
     </li>
 
 

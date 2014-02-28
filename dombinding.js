@@ -17,11 +17,13 @@ define(["eventing"], function (eventing) {
     };
 
     module.bindObject = function (obj, objNode, transObj) {
-        objNode.appendChild(transObj(obj));
+        objNode.parentNode.insertBefore(transObj(obj), objNode);
+        objNode.parentNode.removeChild(objNode);
+        //objNode.appendChild(transObj(obj));
     };
 
     // transitem <-> trans li generator
-    
+
     module.bindList = function (list, domList, transItem) {
 
         for (var j = 0; j < list.length; j++) {
@@ -61,7 +63,18 @@ define(["eventing"], function (eventing) {
 
     };
 
-    module.bindInputField = function (obj, propertyName, inputField) {
+    module.bindAttribute = function (obj, propertyName, node) {
+        switch (node.tagName) {
+        case 'INPUT':
+            module._bindInputField(obj, propertyName, node);
+            break;
+        default:
+            module._bindText(obj, propertyName, node);
+            break;
+        }
+    };
+
+    module._bindInputField = function (obj, propertyName, inputField) {
 
         inputField.value = obj[propertyName];
 
@@ -78,7 +91,7 @@ define(["eventing"], function (eventing) {
 
     };
 
-    module.bindText = function (obj, propertyName, textNode) {
+    module._bindText = function (obj, propertyName, textNode) {
 
         textNode.textContent = obj[propertyName];
 
@@ -91,54 +104,84 @@ define(["eventing"], function (eventing) {
 
     };
 
-    module.cloneNode = function (node, obj) {
+    module.cloneNode = function (node, obj, parentNode, bindingActive) {
 
-        var transformationName;
+        var getBindingAttribute = function (node) {
+            var bindingAttributes = ['data-bind-object', 'data-bind-attribute', 'data-bind-list'];
+            if (!node.hasAttribute) return false;
+            for (var i = 0; i < bindingAttributes.length; i++) {
+                var bindingAttribute = bindingAttributes[i];
+                if (node.hasAttribute(bindingAttribute)) return {
+                    attributeName: bindingAttribute,
+                    attributeValue: node.getAttribute(bindingAttribute)
+                };
+            }
+            return false;
+        };
+
+        var cloneChildren = function (node, obj, cloneNode) {
+            for (var i = 0; i < node.childNodes.length; i++) {
+                var childNode = node.childNodes[i];
+                var cloneChildNode = module.cloneNode(childNode, obj, cloneNode, true);
+                cloneNode.appendChild(cloneChildNode);
+            }
+        };
+
+        var getTransformation = function (node) {
+            if (node.hasAttribute('data-template')) {
+                var transformationName = node.getAttribute('data-template');
+                return module.transformations[transformationName];
+            } else {
+                if (node.hasAttribute('data-bind-list'))
+                    return module.parseTransformationFromTemplate(node.firstElementChild, false);
+                else
+                    return module.parseTransformationFromTemplate(node, false);
+            }
+        };
+
         var cloneNode = node.cloneNode();
+        if (parentNode) parentNode.appendChild(cloneNode);
 
-        if (cloneNode.hasAttribute) {
-            if (node.hasAttribute('data-template')) cloneNode.removeAttribute('data-template');
-            if (node.hasAttribute('data-bind-obj')) {
-                cloneNode.removeAttribute('data-bind-obj');
-                var objectName = node.getAttribute('data-bind-obj');
-                transformationName = node.getAttribute('data-template');                
-                module.bindObject(obj[objectName], cloneNode, module.transformations[transformationName]);
+        var bindingAttribute = getBindingAttribute(node);
+        if (bindingAttribute) {
+            cloneNode.removeAttribute(bindingAttribute.attributeName);
+            if (bindingActive) {
+                switch (bindingAttribute.attributeName) {
+                case 'data-bind-object':
+                    module.bindObject(obj[node.getAttribute('data-bind-object')], cloneNode, getTransformation(node));
+                    break;
+                case 'data-bind-list':
+                    module.bindList(obj[node.getAttribute('data-bind-list')], cloneNode, getTransformation(node));
+                    break;
+                case 'data-bind-attribute':
+                    module.bindAttribute(obj, node.getAttribute('data-bind-attribute'), cloneNode);
+                    break;
+                }
+            } else {
+                cloneChildren(node, obj, cloneNode);
             }
-            if(node.hasAttribute('data-bind-attr')){
-                cloneNode.removeAttribute('data-bind-attr');
-                var attributeName = node.getAttribute('data-bind-attr');
-                module.bindText(obj,attributeName,cloneNode);
-            }
-            if(node.hasAttribute('data-bind-list')){
-                cloneNode.removeAttribute('data-bind-list');
-                var listName = node.getAttribute('data-bind-list');
-                transformationName = node.getAttribute('data-template');                
-                module.bindList(obj[listName],cloneNode, module.transformations[transformationName]);
-            }            
-        }
-
-        for (var i = 0; i < node.childNodes.length; i++) {
-            var childNode = node.childNodes[i];
-            var cloneChildNode = module.cloneNode(childNode, obj);
-            cloneNode.appendChild(cloneChildNode);
+        } else {
+            cloneChildren(node, obj, cloneNode);
         }
 
         return cloneNode;
     };
 
-    module.parseTransformationFromTemplate = function (node) {
+    module.parseTransformationFromTemplate = function (node, bindingActive) {
         return function (obj) {
-            return module.cloneNode(node, obj);
+            return module.cloneNode(node, obj, null, bindingActive);
         };
     };
 
     module.runInterpreter = function () {
         // parse transformations
         module.transformations = {};
-        var templateNodes = document.querySelectorAll('[data-template]:not([data-bind-obj]):not([data-bind-list])');
+        var templateNodes = document.querySelectorAll('[data-def-template]');
         for (var i = 0; i < templateNodes.length; i++) {
             var templateNode = templateNodes.item(i);
-            module.transformations[templateNode.getAttribute('data-template')] = module.parseTransformationFromTemplate(templateNode);
+            var templateName = templateNode.getAttribute('data-def-template');
+            templateNode.removeAttribute('data-def-template');
+            module.transformations[templateName] = module.parseTransformationFromTemplate(templateNode, true);
             templateNode.parentNode.removeChild(templateNode);
         }
 
