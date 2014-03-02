@@ -18,10 +18,10 @@ require(["eventing"], function (eventing) {
             }
         };
 
-        eventing.subscribe(o1, "o1_signal", o2, "o2_slot", function (event, slot) {
+        eventing.subscribe(o1, "o1_signal", o2, function (event, slot) {
             console.log(event, slot);
         });
-        eventing.subscribe(o2, "o2_signal", o1, "o1_slot", function (event, slot) {
+        eventing.subscribe(o2, "o2_signal", o1, function (event, slot) {
             console.log(event, slot);
         });
 
@@ -131,6 +131,7 @@ require(["eventing"], function (eventing) {
         Model.prototype = {
 
             init: function () {
+                this.name = 'model';
                 this.counter = 0;
             },
 
@@ -150,7 +151,7 @@ require(["eventing"], function (eventing) {
 
 
         viewer1.setCounter(13);
-        viewer2.setCounter(14);
+        //  viewer2.setCounter(14);
 
     };
 
@@ -159,8 +160,8 @@ require(["eventing"], function (eventing) {
     //  main
     // =========================================================================
 
-    testEvents();
-    testClasses();
-    testMethods();    
-    
+    //testEvents();
+    //testClasses();
+    testMethods();
+
 });
