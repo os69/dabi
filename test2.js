@@ -124,7 +124,7 @@ require(["map", "eventing", "list", "dombinding"], function (map, eventing, list
         var input = document.createElement('input');
         input.setAttribute('type', 'text');
         li.appendChild(input);
-        dombinding.bindInputField(item, 'label', input);
+        dombinding.bindAttribute(item, 'label', input);
 
         // del button
         var delButton = document.createElement('button');
@@ -305,10 +305,10 @@ require(["map", "eventing", "list", "dombinding"], function (map, eventing, list
             value: 0
         };
 
-        dombinding.bindInputField(obj, "value", input1);
-        dombinding.bindInputField(obj, "value", input2);
-        dombinding.bindText(obj, "value", output1);
-        dombinding.bindText(obj, "value", output2);
+        dombinding.bindAttribute(obj, "value", input1);
+        dombinding.bindAttribute(obj, "value", input2);
+        dombinding.bindAttribute(obj, "value", output1);
+        dombinding.bindAttribute(obj, "value", output2);
     };
 
     // =========================================================================
@@ -351,6 +351,10 @@ require(["map", "eventing", "list", "dombinding"], function (map, eventing, list
     // =========================================================================
     //  main
     // =========================================================================
+    //testUI1();
+    //testUI2();
     testUI3();
+    //testUI4();
+    //testUI5();
 
 });

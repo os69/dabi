@@ -151,7 +151,7 @@ require(["eventing"], function (eventing) {
 
 
         viewer1.setCounter(13);
-        //  viewer2.setCounter(14);
+        viewer2.setCounter(14);
 
     };
 
@@ -160,8 +160,8 @@ require(["eventing"], function (eventing) {
     //  main
     // =========================================================================
 
-    //testEvents();
-    //testClasses();
+    // testEvents();
+    //   testClasses();
     testMethods();
 
 });

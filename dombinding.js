@@ -148,7 +148,13 @@ define(["eventing"], function (eventing) {
             if (bindingActive) {
                 switch (bindingAttribute.attributeName) {
                 case 'data-bind-object':
-                    module.bindObject(obj[node.getAttribute('data-bind-object')], cloneNode, getTransformation(node));
+                    var bindObj;
+                    var attrName = node.getAttribute('data-bind-object');
+                    if (attrName === '$self')
+                        bindObj = obj;
+                    else
+                        bindObj = obj[attrName];
+                    module.bindObject(bindObj, cloneNode, getTransformation(node));
                     break;
                 case 'data-bind-list':
                     module.bindList(obj[node.getAttribute('data-bind-list')], cloneNode, getTransformation(node));
@@ -173,9 +179,14 @@ define(["eventing"], function (eventing) {
         };
     };
 
+    module.transformations = {
+        "$identity" : function(obj){
+            return document.createTextNode(obj);
+        }
+    };
+
     module.runInterpreter = function () {
         // parse transformations
-        module.transformations = {};
         var templateNodes = document.querySelectorAll('[data-def-template]');
         for (var i = 0; i < templateNodes.length; i++) {
             var templateNode = templateNodes.item(i);
@@ -184,8 +195,6 @@ define(["eventing"], function (eventing) {
             module.transformations[templateName] = module.parseTransformationFromTemplate(templateNode, true);
             templateNode.parentNode.removeChild(templateNode);
         }
-
-        //  
     };
 
     module.parseDocument = function (done) {

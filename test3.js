@@ -22,10 +22,12 @@ define(["map", "eventing", "list", "dombinding"], function (map, eventing, list,
                 },
                 items: [
                     {
-                        description: 'item1'
+                        description: 'item1',
+                        subitems: ['a','b','c']
                     },
                     {
-                        description: 'item2'
+                        description: 'item2',
+                        subitems: ['x','y','z']
                     }
                 ]
             };

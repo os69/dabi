@@ -14,6 +14,46 @@ define([], function () {
     };
 
     // =======================================================================
+    // Processed Objects
+    // =======================================================================
+    module.ProcessedObjects = function () {
+        this.init.apply(this, arguments);
+    };
+
+    module.ProcessedObjects.prototype = {
+
+        init: function (processedObjects) {
+            this.processedObjects = [];
+            if (processedObjects) {
+                for (var i = 0; i < processedObjects.length; i++) {
+                    var processedObject = processedObjects[i];
+                    this.processedObjects.push({
+                        receiver: processedObject.receiver,
+                        handlerName: processedObject.handlerName
+                    });
+                }
+            }
+        },
+
+        addProcessedObject: function (receiver, methodName) {
+            if (this.isProcessedObject(receiver, methodName)) return;
+            this.processedObjects.push({
+                receiver: receiver,
+                handlerName: methodName
+            });
+        },
+
+        isProcessedObject: function (receiver, methodName) {
+            for (var i = 0; i < this.processedObjects.length; i++) {
+                var processedObject = this.processedObjects[i];
+                if (processedObject.receiver === receiver && processedObject.handlerName === methodName) return true;
+            }
+            return false;
+        }
+
+    };
+
+    // =======================================================================
     // Event
     // =======================================================================
     module.Event = function () {
@@ -24,45 +64,129 @@ define([], function () {
 
         init: function (data) {
             extend(this, data);
-            if (!data.processedObjects) {
-                // new obj
-                this.processedObjects = [];
-            } else {
-                // copy
-                this.processedObjects = [];
-                for (var i = 0; i < data.processedObjects.length; i++) {
-                    var processedObject = data.processedObjects[i];
-                    this.processedObjects.push({
-                        receiver: processedObject.receiver,
-                        handler: processedObject.handler
-                    });
+        }
+
+    };
+
+    // =======================================================================
+    // EventProperties
+    // =======================================================================
+    module.EventProperties = function () {
+        this.init.apply(this, arguments);
+    };
+
+    module.EventProperties.prototype = {
+
+        init: function (obj) {
+            this.obj = obj;
+            this.receivers = {};
+            this.senders = {};
+            this.decorators = {};
+
+        },
+
+        addReceiver: function (signal, receiver, handler) {
+            var receivers = this.receivers[signal];
+            if (!receivers) {
+                receivers = [];
+                this.receivers[signal] = receivers;
+            }
+            for (var i = 0; i < receivers.length; i++) {
+                var receiverData = receivers[i];
+                if (receiverData.receiver === receiver && receiverData.handler === handler) return;
+            }
+            receivers.push({
+                receiver: receiver,
+                handler: handler
+            });
+        },
+
+        removeReceiver: function (signal, receiver, handler) {
+            var receivers = this.receivers[signal];
+            if (!receivers) return;
+            for (var i = 0; i < receivers.length; i++) {
+                var receiverData = receivers[i];
+                if (receiverData.receiver === receiver && receiverData.handler === handler) {
+                    receivers.splice(i, 1);
+                    return;
                 }
             }
         },
 
-        getHandlerName : function(handler){
-            if(handler.name)
-                return handler.name;
-            else
-                return handler;
+        getReceivers: function (signal) {
+            var result = [];
+            var receivers = this.receivers[signal];
+            if (!receivers) return result;
+            for (var i = 0; i < receivers.length; i++) {
+                var receiverData = receivers[i];
+                result.push({
+                    receiver: receiverData.receiver,
+                    handler: receiverData.handler
+                });
+            }
+            return result;
         },
-        
-        addProcessedObject: function (receiver, handler) {
-            if (this.isProcessedObject(receiver, handler)) return;
-            this.processedObjects.push({
-                receiver: receiver,
-                handler: this.getHandlerName(handler)
+
+        getAllReceivers: function () {
+            var result = [];
+            for (var signal in this.receivers) {
+                var receivers = this.receivers[signal];
+                for (var i = 0; i < receivers.length; i++) {
+                    var receiverData = receivers[i];
+                    result.push({
+                        signal: signal,
+                        receiver: receiverData.receiver,
+                        handler: receiverData.handler
+                    });
+                }
+            }
+            return result;
+        },
+
+        addSender: function (sender, signal, handler) {
+            var senders = this.senders[signal];
+            if (!senders) {
+                senders = [];
+                this.senders[signal] = senders;
+            }
+            for (var i = 0; i < senders.length; i++) {
+                var senderData = senders[i];
+                if (senderData.sender === sender && senderData.handler === handler) return;
+            }
+            senders.push({
+                sender: sender,
+                handler: handler
             });
         },
 
-        isProcessedObject: function (receiver, handler) {
-            var handlerName = this.getHandlerName(handler);
-            for (var i = 0; i < this.processedObjects.length; i++) {
-                var processedObject = this.processedObjects[i];
-                if (processedObject.receiver === receiver && processedObject.handler === handlerName) return true;
+        removeSender: function (sender, signal, handler) {
+            var senders = this.senders[signal];
+            if (!senders) return;
+            for (var i = 0; i < senders.length; i++) {
+                var senderData = senders[i];
+                if (senderData.sender === sender && senderData.handler === handler) {
+                    senders.splice(i, 1);
+                    return;
+                }
             }
-            return false;
+        },
+
+        getAllSenders: function () {
+            var result = [];
+            for (var signal in this.senders) {
+                var senders = this.senders[signal];
+                for (var i = 0; i < senders.length; i++) {
+                    var senderData = senders[i];
+                    result.push({
+                        sender: senderData.sender,
+                        signal: signal,
+                        handler: senderData.handler
+                    });
+                }
+            }
+            return result;
         }
+
     };
 
     // =======================================================================
@@ -78,124 +202,10 @@ define([], function () {
         getEventProperties: function (obj) {
             var eventProperties = obj[EVENT_PROPERTY];
             if (!eventProperties) {
-                eventProperties = {
-                    receivers: {},
-                    senders: {},
-                    decorators: {},
-                    handlers: {}
-                };
+                eventProperties = new module.EventProperties(obj);
                 obj[EVENT_PROPERTY] = eventProperties;
             }
             return eventProperties;
-        },
-
-        addReceiver: function (sender, signal, receiver, handler) {
-            var eventProperties = this.getEventProperties(sender);
-            var receivers = eventProperties.receivers[signal];
-            if (!receivers) {
-                receivers = [];
-                eventProperties.receivers[signal] = receivers;
-            }
-            for (var i = 0; i < receivers.length; i++) {
-                var receiverData = receivers[i];
-                if (receiverData.receiver === receiver && receiverData.handler === handler) return;
-            }
-            receivers.push({
-                receiver: receiver,
-                handler: handler
-            });
-        },
-
-        removeReceiver: function (sender, signal, receiver, handler) {
-            var eventProperties = this.getEventProperties(sender);
-            var receivers = eventProperties.receivers[signal];
-            if (!receivers) return;
-            for (var i = 0; i < receivers.length; i++) {
-                var receiverData = receivers[i];
-                if (receiverData.receiver === receiver && receiverData.handler === handler) {
-                    receivers.splice(i, 1);
-                    return;
-                }
-            }
-        },
-
-        getReceivers: function (sender, signal) {
-            var result = [];
-            var eventProperties = this.getEventProperties(sender);
-            var receivers = eventProperties.receivers[signal];
-            if (!receivers) return result;
-            for (var i = 0; i < receivers.length; i++) {
-                var receiverData = receivers[i];
-                result.push({
-                    receiver: receiverData.receiver,
-                    handler: receiverData.handler
-                });
-            }
-            return result;
-        },
-
-        getAllReceivers: function (sender) {
-            var result = [];
-            var eventProperties = this.getEventProperties(sender);
-            for (var signal in eventProperties.receivers) {
-                var receivers = eventProperties.receivers[signal];
-                for (var i = 0; i < receivers.length; i++) {
-                    var receiverData = receivers[i];
-                    result.push({
-                        signal: signal,
-                        receiver: receiverData.receiver,
-                        handler: receiverData.handler
-                    });
-                }
-            }
-            return result;
-        },
-
-        addSender: function (sender, signal, receiver, handler) {
-            var eventProperties = this.getEventProperties(receiver);
-            var senders = eventProperties.senders[signal];
-            if (!senders) {
-                senders = [];
-                eventProperties.senders[signal] = senders;
-            }
-            for (var i = 0; i < senders.length; i++) {
-                var senderData = senders[i];
-                if (senderData.sender === sender && senderData.handler === handler) return;
-            }
-            senders.push({
-                sender: sender,
-                handler: handler
-            });
-        },
-
-        removeSender: function (sender, signal, receiver, handler) {
-            var eventProperties = this.getEventProperties(receiver);
-            var senders = eventProperties.senders[signal];
-            if (!senders) return;
-            for (var i = 0; i < senders.length; i++) {
-                var senderData = senders[i];
-                if (senderData.sender === sender && senderData.handler === handler) {
-                    senders.splice(i, 1);
-                    return;
-                }
-            }
-        },
-
-        getAllSenders: function (receiver) {
-            var result = [];
-            var eventProperties = this.getEventProperties(receiver);
-            for (var signal in eventProperties.senders) {
-                var senders = eventProperties.senders[signal];
-                for (var i = 0; i < senders.length; i++) {
-                    var senderData = senders[i];
-                    result.push({
-                        sender: senderData.sender,
-                        signal: signal,
-                        handler: senderData.handler
-                    });
-                }
-            }
-            return result;
         },
 
         subscribe: function (sender, signal, receiver, handler) {
@@ -205,37 +215,34 @@ define([], function () {
             receiver = receiver || module.defaultReceiver;
 
             // register receiver in sender obj
-            this.addReceiver(sender, signal, receiver, handler);
+            this.getEventProperties(sender).addReceiver(signal, receiver, handler);
 
             // register sender in receiver obj
-            this.addSender(sender, signal, receiver, handler);
+            this.getEventProperties(receiver).addSender(sender, signal, handler);
 
         },
 
         unSubscribe: function (sender, signal, receiver, handler) {
 
             // deregister receiver in sender obj
-            this.removeReceiver(sender, signal, receiver, handler);
+            this.getEventProperties(sender).removeReceiver(signal, receiver, handler);
 
             // deregister sender in receiver obj
-            this.removeSender(sender, signal, receiver, handler);
+            this.getEventProperties(receiver).removeSender(sender, signal, handler);
 
         },
 
-        raiseEvent: function (sender, signal, message, processedObjects) {
+        raiseEvent: function (sender, signal, message) {
 
             var event = new module.Event({
                 sender: sender,
                 signal: signal,
-                message: message,
-                processedObjects: processedObjects
+                message: message
             });
 
-            var receivers = this.getReceivers(sender, signal);
+            var receivers = this.getEventProperties(sender).getReceivers(signal);
             for (var i = 0; i < receivers.length; i++) {
                 var receiverData = receivers[i];
-                if (event.isProcessedObject(receiverData.receiver, receiverData.handler)) continue;
-                event.addProcessedObject(receiverData.receiver, receiverData.handler);
                 var handler = receiverData.handler;
                 if (typeof (handler) === 'string') handler = receiverData.receiver[handler];
                 handler.apply(receiverData.receiver, [event]);
@@ -244,12 +251,12 @@ define([], function () {
         },
 
         deleteObject: function (obj) {
-            var receivers = this.getAllReceivers(obj);
+            var receivers = this.getEventProperties(obj).getAllReceivers();
             for (var i = 0; i < receivers.length; i++) {
                 var receiverData = receivers[i];
                 this.unSubscribe(obj, receiverData.signal, receiverData.receiver, receiverData.handler);
             }
-            var senders = this.getAllSenders(obj);
+            var senders = this.getEventProperties(obj).getAllSenders();
             for (var j = 0; j < senders.length; j++) {
                 var senderData = senders[j];
                 this.unSubscribe(senderData.sender, senderData.signal, obj, senderData.handler);
@@ -268,35 +275,42 @@ define([], function () {
             label: 'no method call'
         },
 
-        wrapHandler: function (handler, transformation) {
+        generateHandler: function (receiverMethodName, transformation) {
+            return function (event) {
 
-            var wrappedHandler = function (event) {
-                
-                var eventProperties = module.getEventProperties(this);
-                var decorator = eventProperties.decorators['event_' + handler];
+                // check whether object has been processed?
+                if (event.message.processedObjects.isProcessedObject(this, receiverMethodName)) return;
+                event.message.processedObjects.addProcessedObject(this, receiverMethodName);
 
-                var message = event.message;
-
+                // transform incomming method arguments
+                var args = event.message.args;
                 if (transformation) {
                     var transformationParams = [];
-                    transformationParams.push.apply(transformationParams, event.message);
+                    transformationParams.push.apply(transformationParams, event.message.args);
                     transformationParams.push(event.sender, this);
-                    message = transformation.apply(null, transformationParams);
+                    args = transformation.apply(null, transformationParams);
                 }
 
-                var method = this[handler];
-                if (!method || message === module.noMethodCall) {
-                    module.raiseMethodEvent(this, handler, event.message, event.processedObjects);
+                // do we need to call the method?
+                var method = this[receiverMethodName];
+                if (!method || args === module.noMethodCall) {
+                    module.raiseEvent(this, receiverMethodName, {
+                        args: args,
+                        processedObjects: event.message.processedObjects
+                    });
                     return;
                 }
 
+                // pass processed objects to decorator
+                var eventProperties = module.getEventProperties(this);
+                var decorator = eventProperties.decorators['event_' + receiverMethodName];
                 if (decorator) {
-                    decorator.processedObjects = event.processedObjects;
+                    decorator.processedObjects = event.message.processedObjects;
                 }
-                method.apply(this, message);
+
+                // call method
+                method.apply(this, args);
             };
-            wrappedHandler.name = handler;
-            return wrappedHandler;
         },
 
         decorate: function (obj, methodName) {
@@ -319,13 +333,17 @@ define([], function () {
                     processedObjects = decorator.processedObjects;
                     decorator.processedObjects = null;
                 } else {
-                    processedObjects = null;
+                    processedObjects = new module.ProcessedObjects();
+                    processedObjects.addProcessedObject(this, methodName);
                 }
 
                 var result = method.apply(this, arguments);
 
                 if (arguments.length !== 0) {
-                    module.raiseMethodEvent(this, methodName, arguments, processedObjects);
+                    module.raiseEvent(this, methodName, {
+                        args: arguments,
+                        processedObjects: processedObjects
+                    });
                 }
 
                 return result;
@@ -337,43 +355,42 @@ define([], function () {
             eventProperties.decorators['event_' + methodName] = decorator;
         },
 
-        connect: function (sender, signal, receiver, handler, trans1, trans2) {
+        connect: function (sender, senderMethodName, receiver, receiverMethodName, trans1, trans2) {
             if (arguments.length <= 4) {
-                this.connectSingle(sender, signal, receiver, handler);
-                this.connectSingle(receiver, handler, sender, signal);
+                this.connectSingle(sender, senderMethodName, receiver, receiverMethodName);
+                this.connectSingle(receiver, receiverMethodName, sender, senderMethodName);
             } else {
                 if (trans1) {
                     if (trans1 instanceof Function) {
-                        this.connectSingle(sender, signal, receiver, handler, trans1);
+                        this.connectSingle(sender, senderMethodName, receiver, receiverMethodName, trans1);
                     } else {
-                        this.connectSingle(sender, signal, receiver, handler);
+                        this.connectSingle(sender, senderMethodName, receiver, receiverMethodName);
                     }
 
                 }
                 if (trans2) {
                     if (trans2 instanceof Function) {
-                        this.connectSingle(receiver, handler, sender, signal, trans2);
+                        this.connectSingle(receiver, receiverMethodName, sender, senderMethodName, trans2);
                     } else {
-                        this.connectSingle(receiver, handler, sender, signal);
+                        this.connectSingle(receiver, receiverMethodName, sender, senderMethodName);
                     }
                 }
             }
         },
 
-        connectSingle: function (sender, signal, receiver, handler, transformation) {
-            this.decorate(sender, signal);
-            this.decorate(receiver, handler);
-            var wrappedHandler = this.wrapHandler(handler, transformation);
-            module.subscribe(sender, signal, receiver, wrappedHandler);
+        connectSingle: function (sender, senderMethodName, receiver, receiverMethodName, transformation) {
+            this.decorate(sender, senderMethodName);
+            this.decorate(receiver, receiverMethodName);
+            module.subscribe(sender, senderMethodName, receiver, this.generateHandler(receiverMethodName, transformation));
         },
 
-        raiseMethodEvent: function (sender, signal, message, processedObjects) {
-            if (!processedObjects) {
-                var event = new module.Event({});
-                event.addProcessedObject(sender, signal);
-                processedObjects = event.processedObjects;
-            }
-            module.raiseEvent(sender, signal, message, processedObjects);
+        raiseMethodEvent: function (sender, signal, args) {
+            var processedObjects = new module.ProcessedObjects();
+            processedObjects.addProcessedObject(sender, signal);
+            module.raiseEvent(sender, signal, {
+                args: args,
+                processedObjects: processedObjects
+            });
         }
 
     });
