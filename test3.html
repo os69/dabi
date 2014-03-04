@@ -37,7 +37,7 @@
                 <span data-bind-attribute="description"></span>
                 <ul data-bind-list="subitems">
                     <li>
-                        <span data-bind-object="$self" data-template="$identity"></span>
+                        <span data-bind-object="$self" data-template="$changeableIdentity"></span>
                     </li>
                 </ul>
             </li>
@@ -51,6 +51,11 @@
 
     <li data-def-template="Item">
         <span data-bind-attribute="description"></span>
+        <ul data-bind-list="subitems">
+            <li>
+                <span data-bind-object="$self" data-template="$identity"></span>
+            </li>
+        </ul>
         <button id="del">Del</button>
         <script type="text/delayed-javascript">
         </script>

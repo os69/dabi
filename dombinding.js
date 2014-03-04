@@ -16,10 +16,9 @@ define(["eventing"], function (eventing) {
         };
     };
 
-    module.bindObject = function (obj, objNode, transObj) {
-        objNode.parentNode.insertBefore(transObj(obj), objNode);
+    module.bindObject = function (obj, objNode, transObj, parentObj) {
+        objNode.parentNode.insertBefore(transObj(obj, parentObj), objNode);
         objNode.parentNode.removeChild(objNode);
-        //objNode.appendChild(transObj(obj));
     };
 
     // transitem <-> trans li generator
@@ -104,7 +103,7 @@ define(["eventing"], function (eventing) {
 
     };
 
-    module.cloneNode = function (node, obj, parentNode, bindingActive) {
+    module.cloneNode = function (node, parentNode, bindingActive, transformationParameters) {
 
         var getBindingAttribute = function (node) {
             var bindingAttributes = ['data-bind-object', 'data-bind-attribute', 'data-bind-list'];
@@ -119,10 +118,35 @@ define(["eventing"], function (eventing) {
             return false;
         };
 
-        var cloneChildren = function (node, obj, cloneNode) {
+        var getContext = function (value, transformationParameters) {
+            if (value === '$self')
+                return {
+                    obj: transformationParameters.obj,
+                    parentObj: transformationParameters.parentObj,
+                    type: 'object'
+                };
+            else
+                return {
+                    obj: transformationParameters.obj[value],
+                    parentObj: transformationParameters.obj,
+                    type: getType(transformationParameters.obj[value])
+                };
+        };
+
+        var getType = function (obj) {
+            if (typeof (obj) === 'string') return 'string';
+            if (typeof (obj) === 'number') return 'number';
+            if (typeof (obj) === 'object') {
+                if (Object.prototype.toString.call(obj) === '[object Array]') return 'array';
+                return 'object';
+            }
+            throw "Not supported type:" + typeof (obj);
+        };
+
+        var cloneChildren = function (node, cloneNode, transformationParameters) {
             for (var i = 0; i < node.childNodes.length; i++) {
                 var childNode = node.childNodes[i];
-                var cloneChildNode = module.cloneNode(childNode, obj, cloneNode, true);
+                var cloneChildNode = module.cloneNode(childNode, cloneNode, true, transformationParameters);
                 cloneNode.appendChild(cloneChildNode);
             }
         };
@@ -146,42 +170,74 @@ define(["eventing"], function (eventing) {
         if (bindingAttribute) {
             cloneNode.removeAttribute(bindingAttribute.attributeName);
             if (bindingActive) {
-                switch (bindingAttribute.attributeName) {
-                case 'data-bind-object':
-                    var bindObj;
-                    var attrName = node.getAttribute('data-bind-object');
-                    if (attrName === '$self')
-                        bindObj = obj;
-                    else
-                        bindObj = obj[attrName];
-                    module.bindObject(bindObj, cloneNode, getTransformation(node));
+                var context = getContext(bindingAttribute.attributeValue, transformationParameters);
+                switch (context.type) {
+                case 'string':
+                case 'number':
+                    module.bindAttribute(context.parentObj, bindingAttribute.attributeValue, cloneNode);
                     break;
-                case 'data-bind-list':
-                    module.bindList(obj[node.getAttribute('data-bind-list')], cloneNode, getTransformation(node));
+                case 'object':
+                    module.bindObject(context.obj, cloneNode, getTransformation(node), context.parentObj);
                     break;
-                case 'data-bind-attribute':
-                    module.bindAttribute(obj, node.getAttribute('data-bind-attribute'), cloneNode);
+                case 'array':
+                    module.bindList(context.obj, cloneNode, getTransformation(node));
                     break;
                 }
+                /*    switch (bindingAttribute.attributeName) {
+                case 'data-bind-object':
+                    var bindObj, bindObjParent;
+                    var attrName = node.getAttribute('data-bind-object');
+                    if (attrName === '$self ') {
+                        bindObj = transformationParameters.obj;
+                        bindObjParent = transformationParameters.parentObj;
+                    } else {
+                        bindObj = transformationParameters.obj[attrName];
+                        bindObjParent = transformationParameters.obj;
+                    }
+                    module.bindObject(bindObj, cloneNode, getTransformation(node), bindObjParent);
+                    break;
+                case 'data-bind-list':
+                    module.bindList(transformationParameters.obj[node.getAttribute('data-bind-list')], cloneNode, getTransformation(node));
+                    break;
+                case 'data-bind-attribute':
+                    module.bindAttribute(transformationParameters.obj, node.getAttribute('data-bind-attribute'), cloneNode);
+                    break;
+                }*/
             } else {
-                cloneChildren(node, obj, cloneNode);
+                cloneChildren(node, cloneNode, transformationParameters);
             }
         } else {
-            cloneChildren(node, obj, cloneNode);
+            cloneChildren(node, cloneNode, transformationParameters);
         }
 
         return cloneNode;
     };
 
     module.parseTransformationFromTemplate = function (node, bindingActive) {
-        return function (obj) {
-            return module.cloneNode(node, obj, null, bindingActive);
+        return function (obj, parentObj) {
+            return module.cloneNode(node, null, bindingActive, {
+                obj: obj,
+                parentObj: parentObj
+            });
         };
     };
 
     module.transformations = {
-        "$identity" : function(obj){
+
+        "$identity": function (obj) {
             return document.createTextNode(obj);
+        },
+
+        "$changeableIdentity": function (item, list) {
+            var inputNode = document.createElement('input');
+            inputNode.value = item;
+            inputNode.setAttribute('type', 'text');
+            inputNode.addEventListener('change', function (event) {
+                var index = list.indexOf(item);
+                if (index < 0) return;
+                list.splice(index, 1, inputNode.value);
+            });
+            return inputNode;
         }
     };
 
