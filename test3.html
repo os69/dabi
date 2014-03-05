@@ -17,51 +17,58 @@
     <div data-def-template="SalesOrder">
         <h1>Sales Order</h1>
         <h2>Main</h2>
-        <span data-bind-attribute="id"></span>
-        <input data-bind-attribute="description" type="text">
-        <span data-bind-attribute="description"></span>
+        <span data-bind="id"></span>
+        <input data-bind="description" type="text">
+        <span data-bind="description"></span>
         <h2>Status 1</h2>
-        <div data-bind-object="status" data-template="Status"></div>
+        <div data-bind="status" data-template="Status"></div>
         <h2>Status 2</h2>
-        <div data-bind-object="status">
+        <div data-bind="status">
             status:
-            <span data-bind-attribute="status"></span>
+            <span data-bind="status"></span>
             descr:
-            <span data-bind-attribute="description"></span>
+            <span data-bind="description"></span>
+            descr-bold:
+            <span data-bind="description" data-template="Bold"></span>
         </div>
         <h2>Items 1</h2>
-        <ul data-bind-list="items" data-template="Item"></ul>
+        <ul data-bind="items" data-template="Item"></ul>
         <h2>Items 2</h2>
-        <ul data-bind-list="items">
+        <ul data-bind="items">
             <li>
-                <span data-bind-attribute="description"></span>
-                <ul data-bind-list="subitems">
+                <span data-bind="description"></span>
+                <ul data-bind="subitems">
                     <li>
-                        <span data-bind-object="$self" data-template="$changeableIdentity"></span>
+                        <input data-bind="$self">
+                    </li>
+                    <li>
+                        <span data-bind="$self" data-template="Bold"></span>
                     </li>
                 </ul>
             </li>
         </ul>
     </div>
 
+    <b data-def-template="Bold" data-bind="$self"></b>
+
     <div data-def-template="Status">
-        <span data-bind-attribute="status"></span>
-        <span data-bind-attribute="description"></span>
+        <span data-bind="status"></span>
+        <span data-bind="description"></span>
     </div>
 
     <li data-def-template="Item">
-        <span data-bind-attribute="description"></span>
-        <ul data-bind-list="subitems">
-            <li>
-                <span data-bind-object="$self" data-template="$identity"></span>
-            </li>
-        </ul>
+        <span data-bind="description"></span>
         <button id="del">Del</button>
-        <script type="text/delayed-javascript">
+        <script type="text/javascript">
+            require(["dombinding"],function(dombinding){
+                dombinding.templateScript(function(node,item,list){
+                    alert("1");
+                });            
+            });
         </script>
     </li>
 
 
 </body>
 
-</html>E
+</html>

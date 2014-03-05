@@ -2,6 +2,12 @@ define(["eventing"], function (eventing) {
 
     var module = {};
 
+    module.templateScript = function(script){
+        var scriptTags = document.getElementsByTagName('SCRIPT');
+        var scriptTag = scriptTags.item(scriptTags.length-1);
+        scriptTag.templateScript = script;
+    };
+    
     var setterName = function (propertyName) {
         return 'set' + propertyName[0].toUpperCase() + propertyName.slice(1);
     };
@@ -16,8 +22,8 @@ define(["eventing"], function (eventing) {
         };
     };
 
-    module.bindObject = function (obj, objNode, transObj, parentObj) {
-        objNode.parentNode.insertBefore(transObj(obj, parentObj), objNode);
+    module.bindObject = function (obj, objNode, transObj) {
+        objNode.parentNode.insertBefore(transObj(obj), objNode);
         objNode.parentNode.removeChild(objNode);
     };
 
@@ -103,39 +109,26 @@ define(["eventing"], function (eventing) {
 
     };
 
-    module.cloneNode = function (node, parentNode, bindingActive, transformationParameters) {
+    module.cloneNode = function (node, parentNode, bindingActive, transArgs) {
 
-        var getBindingAttribute = function (node) {
-            var bindingAttributes = ['data-bind-object', 'data-bind-attribute', 'data-bind-list'];
-            if (!node.hasAttribute) return false;
-            for (var i = 0; i < bindingAttributes.length; i++) {
-                var bindingAttribute = bindingAttributes[i];
-                if (node.hasAttribute(bindingAttribute)) return {
-                    attributeName: bindingAttribute,
-                    attributeValue: node.getAttribute(bindingAttribute)
-                };
-            }
-            return false;
-        };
-
-        var getContext = function (value, transformationParameters) {
+        var getContext = function (value, transArgs) {
             if (value === '$self')
                 return {
-                    obj: transformationParameters.obj,
-                    parentObj: transformationParameters.parentObj,
-                    type: 'object'
+                    obj: transArgs[0],
+                    parentObj: transArgs[1],
+                    type: getType(transArgs[0])
                 };
             else
                 return {
-                    obj: transformationParameters.obj[value],
-                    parentObj: transformationParameters.obj,
-                    type: getType(transformationParameters.obj[value])
+                    obj: transArgs[0][value],
+                    parentObj: transArgs[0],
+                    type: getType(transArgs[0][value])
                 };
         };
 
         var getType = function (obj) {
-            if (typeof (obj) === 'string') return 'string';
-            if (typeof (obj) === 'number') return 'number';
+            if (typeof (obj) === 'string') return 'simple';
+            if (typeof (obj) === 'number') return 'simple';
             if (typeof (obj) === 'object') {
                 if (Object.prototype.toString.call(obj) === '[object Array]') return 'array';
                 return 'object';
@@ -143,10 +136,10 @@ define(["eventing"], function (eventing) {
             throw "Not supported type:" + typeof (obj);
         };
 
-        var cloneChildren = function (node, cloneNode, transformationParameters) {
+        var cloneChildren = function (node, cloneNode, transArgs) {
             for (var i = 0; i < node.childNodes.length; i++) {
                 var childNode = node.childNodes[i];
-                var cloneChildNode = module.cloneNode(childNode, cloneNode, true, transformationParameters);
+                var cloneChildNode = module.cloneNode(childNode, cloneNode, true, transArgs);
                 cloneNode.appendChild(cloneChildNode);
             }
         };
@@ -163,62 +156,70 @@ define(["eventing"], function (eventing) {
             }
         };
 
+        var fillCloneNode = function (node, context) {
+            if (node.tagName === 'INPUT') {
+                var item = context.obj;
+                var list = context.parentObj;
+                node.value = item;
+                node.setAttribute('type', 'text');
+                node.addEventListener('change', function (event) {
+                    var index = list.indexOf(item);
+                    if (index < 0) return;
+                    list.splice(index, 1, node.value);
+                });
+            } else
+                node.appendChild(document.createTextNode(context.obj));
+        };
+
         var cloneNode = node.cloneNode();
         if (parentNode) parentNode.appendChild(cloneNode);
 
-        var bindingAttribute = getBindingAttribute(node);
-        if (bindingAttribute) {
-            cloneNode.removeAttribute(bindingAttribute.attributeName);
+        if(node.tagName==='SCRIPT'){
+            node.templateScript(cloneNode,transArgs[0],transArgs[1]);
+            return cloneNode;
+        }
+
+        var attributeName = false;
+        if (node.getAttribute) attributeName = node.getAttribute('data-bind');
+
+        if (attributeName) {
+            cloneNode.removeAttribute('data-bind');
             if (bindingActive) {
-                var context = getContext(bindingAttribute.attributeValue, transformationParameters);
+                var context = getContext(attributeName, transArgs);
+                if (context.obj === 'x') {
+                    var z = 1;
+                }
                 switch (context.type) {
-                case 'string':
-                case 'number':
-                    module.bindAttribute(context.parentObj, bindingAttribute.attributeValue, cloneNode);
+                case 'simple':
+                    if (node.hasAttribute('data-template')) {
+                        module.bindObject(context.obj, cloneNode, getTransformation(node));
+                    } else {
+                        if (attributeName === '$self') {
+                            fillCloneNode(cloneNode, context);
+                        } else
+                            module.bindAttribute(context.parentObj, attributeName, cloneNode);
+                    }
                     break;
                 case 'object':
-                    module.bindObject(context.obj, cloneNode, getTransformation(node), context.parentObj);
+                    module.bindObject(context.obj, cloneNode, getTransformation(node));
                     break;
                 case 'array':
                     module.bindList(context.obj, cloneNode, getTransformation(node));
                     break;
                 }
-                /*    switch (bindingAttribute.attributeName) {
-                case 'data-bind-object':
-                    var bindObj, bindObjParent;
-                    var attrName = node.getAttribute('data-bind-object');
-                    if (attrName === '$self ') {
-                        bindObj = transformationParameters.obj;
-                        bindObjParent = transformationParameters.parentObj;
-                    } else {
-                        bindObj = transformationParameters.obj[attrName];
-                        bindObjParent = transformationParameters.obj;
-                    }
-                    module.bindObject(bindObj, cloneNode, getTransformation(node), bindObjParent);
-                    break;
-                case 'data-bind-list':
-                    module.bindList(transformationParameters.obj[node.getAttribute('data-bind-list')], cloneNode, getTransformation(node));
-                    break;
-                case 'data-bind-attribute':
-                    module.bindAttribute(transformationParameters.obj, node.getAttribute('data-bind-attribute'), cloneNode);
-                    break;
-                }*/
             } else {
-                cloneChildren(node, cloneNode, transformationParameters);
+                cloneChildren(node, cloneNode, transArgs);
             }
         } else {
-            cloneChildren(node, cloneNode, transformationParameters);
+            cloneChildren(node, cloneNode, transArgs);
         }
 
         return cloneNode;
     };
 
     module.parseTransformationFromTemplate = function (node, bindingActive) {
-        return function (obj, parentObj) {
-            return module.cloneNode(node, null, bindingActive, {
-                obj: obj,
-                parentObj: parentObj
-            });
+        return function () {
+            return module.cloneNode(node, null, bindingActive, arguments);
         };
     };
 
