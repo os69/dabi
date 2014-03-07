@@ -18,6 +18,11 @@
 
 <body>
 
+    <div data-def-template="bindtest"> 
+        Bindtest:
+        <span data-bind="$self" data-test="{{$self}}"></span>
+    </div>
+    
     <div data-bind="salesOrder">
         <h1>Sales Order</h1>
         <h2>Main</h2>
@@ -29,11 +34,23 @@
         <h2>Status 2</h2>
         <div data-bind="status">
             status:
-            <span data-bind="status"></span>
+            <input data-bind="status" data-test="{{status}}">
+            <span data-bind="status" data-template="bindtest"></span>
             descr:
             <span data-bind="description"></span>
             descr-bold:
             <span data-bind="description" data-template="Bold"></span>
+            <br>
+            Balduin:
+            <span id="balduin"></span>
+            <script>
+                dombinding.templateScript(function(id,obj){            
+                    var span = document.getElementById("balduin#"+id);
+                    dombinding.bindAttribute(obj,"description",span,function(val){
+                        return val.toUpperCase();
+                    });
+                });                
+            </script>
         </div>
         <h2>Items 1</h2>
         <ul data-bind="items" data-template="Item"></ul>
@@ -45,7 +62,7 @@
                     <li>
                         <input data-bind="$self">
                         <span data-bind="$self" data-template="Bold"></span>
-                        <span data-bind="$self"></span>
+                        <span data-bind="$self" data-test="{{$self}}"></span>
                     </li>
                 </ul>
             </li>
@@ -73,7 +90,6 @@
     </li>
 
     <script>
-      
         salesOrder = {
                     id: 10,
                     description: 'Big Order',
@@ -93,8 +109,8 @@
                 ]
                 };
     </script>
-    
-    
+
+
 </body>
 
 </html>
