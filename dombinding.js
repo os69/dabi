@@ -99,18 +99,19 @@
         // ===================================================================        
         module._bindInputField = function (obj, propertyName, inputField, trans1, trans2) {
 
-            inputField.value = trans1 obj[propertyName];
+            inputField.value = trans1 ? trans1(obj[propertyName]) : obj[propertyName];
 
             generateSetter(obj, propertyName);
 
-            eventing.connect(obj, setterName(propertyName), inputField, "val", function (val) {
+            eventing.connect(obj, setterName(propertyName), inputField, "dummyVal", function (val) {
                 inputField.value = trans1 ? trans1(val) : val;
                 return eventing.noMethodCall;
-            }, true);
+            }, function (val) {
+                return [trans2 ? trans2(val) : val];
+            });
 
             inputField.addEventListener('change', function (event) {
-                var value = trans2 ? trans2(inputField.value) : inputField.value;
-                eventing.raiseMethodEvent(inputField, "val", [value]);
+                eventing.raiseMethodEvent(inputField, "dummyVal", [inputField.value]);
             });
 
         };
@@ -124,7 +125,7 @@
 
             generateSetter(obj, propertyName);
 
-            eventing.connect(obj, setterName(propertyName), textNode, "val", function (val, obj, textNode) {
+            eventing.connect(obj, setterName(propertyName), textNode, "dummyVal", function (val, obj, textNode) {
                 textNode.textContent = trans ? trans(val) : val;
                 return eventing.noMethodCall;
             }, false);
@@ -134,16 +135,25 @@
         // ===================================================================
         // bind attribute of an object to an attribute of a dom element
         // ===================================================================        
-        module.bindAttributeToElementAttribute = function (obj, propertyName, element, attributeName) {
+        module.bindAttributeToElementAttribute = function (obj, propertyName, element, attributeName, trans) {
 
-            element.setAttribute(attributeName, obj[propertyName]);
+
+            var val = trans ? trans(obj[propertyName]) : obj[propertyName];
+            if (val === '$remove')
+                element.removeAttribute(attributeName);
+            else
+                element.setAttribute(attributeName, val);
 
             generateSetter(obj, propertyName);
 
             eventing.connect(obj, setterName(propertyName), element, 'dummy', function (val) {
-                element.setAttribute(attributeName, val);
+                val = trans ? trans(val) : val;
+                if (val === '$remove')
+                    element.removeAttribute(attributeName);
+                else
+                    element.setAttribute(attributeName, val);
                 return eventing.noMethodCall;
-            }, false)
+            }, false);
 
         };
 
@@ -165,6 +175,83 @@
         };
 
         // ===================================================================
+        // environment
+        // ===================================================================        
+        module.Environment = function () {
+            this.init.apply(this, arguments);
+        };
+
+        module.Environment.prototype = {
+
+            init: function () {
+                this.stack = [];
+            },
+
+            push: function (obj) {
+                this.stack.push(obj);
+                return this;
+            },
+
+            pop: function () {
+                return this.stack.pop();
+            },
+
+            valueObj: function (path) {
+                if (path[0] === '$') {
+                    switch (path) {
+                    case '$self':
+                        return {
+                            value: this.stack[this.stack.length - 1],
+                            obj: null,
+                            attributeName: null
+                        };
+                    case '$parent':
+                        return {
+                            value: this.stack[this.stack.length - 2],
+                            obj: null,
+                            attributeName: null
+                        };
+                    }
+                } else {
+                    for (var i = this.stack.length - 1; i >= 0; --i) {
+                        var obj = this.stack[i];
+                        if (obj[path]) {
+                            return {
+                                value: obj[path],
+                                obj: obj,
+                                attributeName: path
+                            };
+                        }
+                    }
+                }
+                return null;
+            },
+
+            value: function (path) {
+                return this.valueObj(path).value;
+            },
+
+            clone: function () {
+                var env = new module.Environment();
+                env.stack = this.stack.slice(0);
+                return env;
+            }
+        };
+
+        // ===================================================================
+        // get type
+        // ===================================================================        
+        module.getType = function (obj) {
+            if (typeof (obj) === 'string') return 'simple';
+            if (typeof (obj) === 'number') return 'simple';
+            if (typeof (obj) === 'object') {
+                if (Object.prototype.toString.call(obj) === '[object Array]') return 'array';
+                return 'object';
+            }
+            throw "Not supported type:" + typeof (obj);
+        };
+
+        // ===================================================================
         // template interpreter
         // ===================================================================        
         module.TemplateInterpreter = function () {
@@ -177,31 +264,27 @@
                 this.rootElement = rootElement;
                 this.transformations = {};
                 this.scripts = [];
+                this.env = new module.Environment();
             },
 
-            getBindingyType: function (value, transArgs) {
-                if (value === '$self')
-                    return {
-                        obj: transArgs[0],
-                        parentObj: transArgs[1],
-                        type: this.getType(transArgs[0])
-                    };
-                else
-                    return {
-                        obj: transArgs[0][value],
-                        parentObj: transArgs[0],
-                        type: this.getType(transArgs[0][value])
-                    };
-            },
-
-            getType: function (obj) {
-                if (typeof (obj) === 'string') return 'simple';
-                if (typeof (obj) === 'number') return 'simple';
-                if (typeof (obj) === 'object') {
-                    if (Object.prototype.toString.call(obj) === '[object Array]') return 'array';
-                    return 'object';
+            getBindingyType: function (path, context) {
+                if (path[0] === '$') {
+                    switch (path) {
+                    case '$0':
+                        return {
+                            value: context.transArgs[0],
+                            obj: null,
+                            attributeName: null
+                        };
+                    case '$1':
+                        return {
+                            value: context.transArgs[1],
+                            obj: null,
+                            attributeName: null
+                        };
+                    }
                 }
-                throw "Not supported type:" + typeof (obj);
+                return context.env.valueObj(path);
             },
 
             cloneChildren: function (node, cloneNode, context) {
@@ -211,28 +294,28 @@
                 }
             },
 
-            getTransformation: function (node) {
+            getTransformation: function (node, context) {
                 if (node.hasAttribute('data-template')) {
                     var transformationName = node.getAttribute('data-template');
                     return this.transformations[transformationName];
                 } else {
-                    return this.parseTransformationFromTemplate(node, false);
+                    return this.parseTransformationFromTemplate(node, false, context.env);
                 }
             },
 
-            getListTransformation: function (node) {
+            getListTransformation: function (node, context) {
                 if (node.hasAttribute('data-template')) {
                     var transformationName = node.getAttribute('data-template');
                     return this.transformations[transformationName];
                 } else {
-                    return this.parseTransformationFromTemplate(node.firstElementChild, true);
+                    return this.parseTransformationFromTemplate(node.firstElementChild, true, context.env);
                 }
             },
 
-            fillCloneNode: function (node, bindingType) {
+            fillCloneNode: function (node, context, bindingType) {
                 if (node.tagName === 'INPUT') {
-                    var item = bindingType.obj;
-                    var list = bindingType.parentObj;
+                    var item = context.transArgs[0];
+                    var list = context.transArgs[1];
                     node.value = item;
                     node.setAttribute('type', 'text');
                     node.addEventListener('change', function (event) {
@@ -241,15 +324,32 @@
                         list.splice(index, 1, node.value);
                     });
                 } else {
-                    node.appendChild(document.createTextNode(bindingType.obj));
+                    node.appendChild(document.createTextNode(bindingType.value));
                 }
             },
 
-            registerScript: function (node, context) {
+            registerScript: function (node, context, parentNode) {
+                var self = this;
+
+                // script exists?
                 if (!node.templateScript) return;
-                this.scripts.push(function () {
+
+                // schedule delayed execution
+                if (self.scripts.length === 0) {
+                    setTimeout(function () {
+                        self.executeScripts();
+                    }, 0);
+                }
+
+                // register script
+                self.scripts.push(function () {
                     var args = [];
-                    args.push(context.transId);
+                    var ctx = {
+                        id: context.transId,
+                        parent: parentNode,
+                        env: context.env
+                    };
+                    args.push(ctx);
                     for (var i = 0; i < context.transArgs.length; i++) {
                         var arg = context.transArgs[i];
                         args.push(arg);
@@ -263,6 +363,7 @@
                     var script = this.scripts[i];
                     script();
                 }
+                this.scripts = [];
             },
 
             processElementAttributes: function (cloneNode, context) {
@@ -273,27 +374,46 @@
                     var match = matcher.exec(attribute.value);
                     if (!match) continue;
                     var bindName = match[1];
-                    var bindingType = this.getBindingyType(bindName, context.transArgs);
-                    if (bindingType.type !== 'simple') return;
-                    if (bindName === '$self') {
-                        cloneNode.setAttribute(attribute.name, bindingType.obj);
+                    var bindingType = this.getBindingyType(bindName, context);
+                    if (module.getType(bindingType.value) !== 'simple') return;
+                    var attrName;
+                    if (cloneNode.tagName === 'IMG' && attribute.name === 'data-src') {
+                        cloneNode.removeAttribute(attribute.name);
+                        attrName = 'src';
                     } else {
-                        module.bindAttributeToElementAttribute(bindingType.parentObj, bindName, cloneNode, attribute.name);
+                        attrName = attribute.name;
+                    }
+                    if (!bindingType.attributeName) {
+                        cloneNode.setAttribute(attrName, bindingType.value);
+                    } else {
+                        module.bindAttributeToElementAttribute(bindingType.obj, bindingType.attributeName, cloneNode, attrName);
                     }
                 }
             },
 
-            cloneNode: function (node, parentNode, bindingActive, context) {
+            processDefTemplate: function (node, context) {
+                var transName = node.getAttribute('data-def-template');
+                node.removeAttribute('data-def-template');
+                this.transformations[transName] = this.parseTransformationFromTemplate(node, true, context.env);
+                node.parentNode.removeChild(node);
+            },
+
+            cloneNode: function (node, cloneParentNode, bindingActive, context) {
+
+                if (node.getAttribute && node.getAttribute('data-def-template')) {
+                    this.processDefTemplate(node, context);
+                    return;
+                }
+
+                if (node.tagName === 'SCRIPT') {
+                    this.registerScript(node, context, cloneParentNode);
+                    return;
+                }
 
                 var cloneNode = node.cloneNode(false);
                 if (cloneNode.hasAttribute && cloneNode.hasAttribute('id'))
                     cloneNode.setAttribute('id', cloneNode.getAttribute('id') + '#' + context.transId);
-                if (parentNode) parentNode.appendChild(cloneNode);
-
-                if (node.tagName === 'SCRIPT') {
-                    this.registerScript(node, context);
-                    return cloneNode;
-                }
+                if (cloneParentNode) cloneParentNode.appendChild(cloneNode);
 
                 var bindName = false;
                 if (node.getAttribute) bindName = node.getAttribute('data-bind');
@@ -305,25 +425,26 @@
                 }
 
                 cloneNode.removeAttribute('data-bind');
-                var bindingType = this.getBindingyType(bindName, context.transArgs);
-                switch (bindingType.type) {
+                var bindingType = this.getBindingyType(bindName, context);
+                switch (module.getType(bindingType.value)) {
                 case 'simple':
                     if (node.hasAttribute('data-template')) {
-                        cloneNode = module.bindObject(bindingType.obj, cloneNode, this.getTransformation(node));
+                        cloneNode = module.bindObject(bindingType.value, cloneNode, this.getTransformation(node, context));
                     } else {
-                        if (bindName === '$self') {
-                            this.fillCloneNode(cloneNode, bindingType);
+                        if (!bindingType.attributeName) {
+                            this.fillCloneNode(cloneNode, context, bindingType);
                         } else {
-                            module.bindAttribute(bindingType.parentObj, bindName, cloneNode);
+                            module.bindAttribute(bindingType.obj, bindingType.attributeName, cloneNode);
                         }
                         this.processElementAttributes(cloneNode, context);
+                        this.cloneChildren(node, cloneNode, context);
                     }
                     break;
                 case 'object':
-                    cloneNode = module.bindObject(bindingType.obj, cloneNode, this.getTransformation(node));
+                    cloneNode = module.bindObject(bindingType.value, cloneNode, this.getTransformation(node, context));
                     break;
                 case 'array':
-                    module.bindList(bindingType.obj, cloneNode, this.getListTransformation(node));
+                    module.bindList(bindingType.value, cloneNode, this.getListTransformation(node, context));
                     this.processElementAttributes(cloneNode, context);
                     break;
                 }
@@ -331,28 +452,34 @@
                 return cloneNode;
             },
 
-            parseTransformationFromTemplate: function (node, bindingActive) {
+            parseTransformationFromTemplate: function (node, bindingActive, env) {
                 var self = this;
-                return function () {
+                var transformation = function () {
                     var context = {
                         transId: module.generateId(),
-                        transArgs: arguments
+                        transArgs: arguments,
+                        env: env.clone().push(arguments[0])
                     };
                     return self.cloneNode(node, null, bindingActive, context);
                 };
+                return transformation;
             },
 
             run: function () {
+
+                /*                var env = new module.Environment();
+                env.push(window);
+
                 var templateNodes = this.rootElement.querySelectorAll('[data-def-template]');
                 for (var i = 0; i < templateNodes.length; i++) {
                     var templateNode = templateNodes.item(i);
                     var templateName = templateNode.getAttribute('data-def-template');
                     templateNode.removeAttribute('data-def-template');
-                    this.transformations[templateName] = this.parseTransformationFromTemplate(templateNode, true);
+                    this.transformations[templateName] = this.parseTransformationFromTemplate(templateNode, true, env);
                     templateNode.parentNode.removeChild(templateNode);
-                }
-                module.bindObject(window, document.body, this.parseTransformationFromTemplate(document.body));
-                this.executeScripts();
+                }*/
+                module.bindObject(window, document.body, this.parseTransformationFromTemplate(document.body, false, new module.Environment()));
+
             }
 
         };

@@ -385,7 +385,7 @@
 
             connectSingle: function (sender, senderMethodName, receiver, receiverMethodName, transformation) {
                 this.decorate(sender, senderMethodName);
-                this.decorate(receiver, receiverMethodName);
+                //this.decorate(receiver, receiverMethodName);
                 module.subscribe(sender, senderMethodName, receiver, this.generateHandler(receiverMethodName, transformation));
             },
 

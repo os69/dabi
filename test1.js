@@ -160,8 +160,11 @@ require(["eventing"], function (eventing) {
     //  main
     // =========================================================================
 
-    // testEvents();
-    //   testClasses();
+    console.log("--events");
+    testEvents();
+    console.log("--classes");
+    testClasses();
+    console.log("--methods");
     testMethods();
 
 });
