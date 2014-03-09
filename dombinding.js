@@ -175,6 +175,56 @@
         };
 
         // ===================================================================
+        // JS path resolver
+        // ===================================================================        
+        module.getByPath = function (obj, path) {
+
+            var result = {
+                value: obj,
+                obj: null,
+                attributeName: null,
+                listIndex: 0
+            };
+
+            var parts = path.split(new RegExp("[\\.\\[\\]]", "g"));
+            for (var i = 0; i < parts.length; i++) {
+                var part = parts[i];
+                if (part.length === 0) continue;
+                if (Object.prototype.toString.call(result.value) === '[object Array]') {
+                    var listIndex = parseInt(part);
+                    result.obj = result.value;
+                    result.attributeName = null;
+                    result.listIndex = listIndex;
+                    result.value = result.obj[listIndex];
+                } else {
+                    result.obj = result.value;
+                    result.attributeName = part;
+                    result.listIndex = null;
+                    result.value = result.obj[part];
+                }
+                if (result.value === undefined) return undefined;
+            }
+
+            return result;
+        };
+
+        module.testObj = {
+            test1: {
+                test2: 10,
+                test3: {
+                    test4: 20
+                },
+                list: [{
+                        a: 1,
+                        b: [1, 2]
+                    },
+                    [10, {
+                        a: 1
+                    }]]
+            }
+        };
+
+        // ===================================================================
         // environment
         // ===================================================================        
         module.Environment = function () {
@@ -197,31 +247,17 @@
             },
 
             valueObj: function (path) {
+                var obj;
                 if (path[0] === '$') {
-                    switch (path) {
-                    case '$self':
-                        return {
-                            value: this.stack[this.stack.length - 1],
-                            obj: null,
-                            attributeName: null
-                        };
-                    case '$parent':
-                        return {
-                            value: this.stack[this.stack.length - 2],
-                            obj: null,
-                            attributeName: null
-                        };
-                    }
+                    obj = {};
+                    if (this.stack[this.stack.length - 1]) obj.$self = this.stack[this.stack.length - 1];
+                    if (this.stack[this.stack.length - 2]) obj.$parent = this.stack[this.stack.length - 2];
+                    return module.getByPath(obj, path);
                 } else {
                     for (var i = this.stack.length - 1; i >= 0; --i) {
-                        var obj = this.stack[i];
-                        if (obj[path]) {
-                            return {
-                                value: obj[path],
-                                obj: obj,
-                                attributeName: path
-                            };
-                        }
+                        obj = this.stack[i];
+                        var valueObj = module.getByPath(obj, path);
+                        if (valueObj) return valueObj;
                     }
                 }
                 return null;
@@ -269,20 +305,17 @@
 
             getBindingyType: function (path, context) {
                 if (path[0] === '$') {
-                    switch (path) {
-                    case '$0':
-                        return {
-                            value: context.transArgs[0],
-                            obj: null,
-                            attributeName: null
-                        };
-                    case '$1':
-                        return {
-                            value: context.transArgs[1],
-                            obj: null,
-                            attributeName: null
-                        };
+                    var obj = {};
+                    if (context.transArgs[0]) {
+                        obj.$0 = context.transArgs[0];
+                        obj.$item = context.transArgs[0];
                     }
+                    if (context.transArgs[1]) {
+                        obj.$1 = context.transArgs[1];
+                        obj.$list = context.transArgs[1];
+                    }
+                    var valueObj = module.getByPath(obj, path);
+                    if (valueObj) return valueObj;
                 }
                 return context.env.valueObj(path);
             },
@@ -349,6 +382,8 @@
                         parent: parentNode,
                         env: context.env
                     };
+                    if (context.env.stack[context.env.stack.length - 1]) ctx.$self = context.env.stack[context.env.stack.length - 1];
+                    if (context.env.stack[context.env.stack.length - 2]) ctx.$parent = context.env.stack[context.env.stack.length - 2];
                     args.push(ctx);
                     for (var i = 0; i < context.transArgs.length; i++) {
                         var arg = context.transArgs[i];
