@@ -1,3 +1,4 @@
+/*global window */
 (function () {
 
     var define = window.define || function (deps, mod) {

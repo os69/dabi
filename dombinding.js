@@ -89,7 +89,7 @@
         // bind attribute of object to a dom element
         // ===================================================================        
         module.bindAttribute = function (obj, propertyName, node, trans1, trans2) {
-            if (node.type === Node.TEXT_NODE) {
+            if (node.nodeType === Node.TEXT_NODE) {
                 module._bindText(obj, propertyName, node, trans1);
             } else {
                 switch (node.tagName) {
@@ -199,7 +199,7 @@
                 listIndex: 0
             };
 
-            var parts = path.split(new RegExp("[\\.\\[\\]]", "g"));
+            var parts = path.split(new RegExp("[\\.\\[\\]/]", "g"));
             for (var i = 0; i < parts.length; i++) {
                 var part = parts[i];
                 if (part.length === 0) continue;
@@ -276,14 +276,36 @@
                 return this;
             },
 
+            determineStackIndex: function (path) {
+                var index = this.stack.length - 1;
+                while (path.indexOf("../") === 0) {
+                    index--;
+                    path = path.slice(3);
+                }
+                return {
+                    index: index,
+                    path: path
+                };
+            },
+
             resolvePath: function (path) {
+
+                // determine stack index from "../" prefixes
+                var stackIndex = this.determineStackIndex(path);
+                path = stackIndex.path;
+
+                // if no root attribute is specified -> use $self
                 if (path[0] !== '$') path = '$self.' + path;
-                for (var i = this.stack.length - 1; i >= 0; --i) {
+
+                // search stack starting from stack index
+                for (var i = stackIndex.index; i >= 0; --i) {
                     var obj = this.stack[i];
                     var result = module.getByPath(obj, path);
-                    if (result.obj === obj) result.attributeName = null;
+                    // artifical root obj cannot be used for attribute binding -> clear
+                    if (result && result.obj === obj) result.attributeName = null;
                     if (result) return result;
                 }
+
                 return null;
             },
 
@@ -392,13 +414,18 @@
                     var args = [];
                     var ctx = {
                         id: context.transId,
-                        parent: parentNode,
+                        parentNode: parentNode,
                         env: context.env,
+                        getElementById : function(id){
+                            return document.getElementById(id+"#"+context.transId);
+                        }
                     };
                     args.push(ctx);
                     var obj = context.env.getLast();
-                    args.push(obj.$self);
-                    if (obj.$list) args.push(obj.$list);
+                    for(var i=0;i<9;++i){
+                        var attrName = "$"+i;
+                        if(obj[attrName]) args.push(obj[attrName]);
+                    }
                     node.templateScript.apply(node, args);
                 });
             },
@@ -444,7 +471,24 @@
             },
 
             processTextNode: function (node, cloneParentNode, context) {
-
+                var parts = node.nodeValue.split(new RegExp("{{([^}]+)}}"));
+                for (var i = 0; i < parts.length; i++) {
+                    var part = parts[i];
+                    if (i % 2 === 0) {
+                        // no match
+                        cloneParentNode.appendChild(document.createTextNode(part));
+                    } else {
+                        // match
+                        var resolveResult = context.env.resolvePath(part);
+                        if (module.getType(resolveResult.value) !== 'simple') continue;
+                        var cloneNode = document.createTextNode("");
+                        cloneParentNode.appendChild(cloneNode);
+                        if (resolveResult.attributeName)
+                            module.bindAttribute(resolveResult.obj, resolveResult.attributeName, cloneNode);
+                        else
+                            cloneNode.nodeValue = resolveResult.value;
+                    }
+                }
             },
 
             cloneNode: function (node, cloneParentNode, bindingActive, context) {
@@ -459,10 +503,10 @@
                     return;
                 }
 
-               /* if (node.type === Node.TEXT_NODE) {
+                if (node.nodeType === Node.TEXT_NODE) {
                     this.processTextNode(node, cloneParentNode, context);
                     return;
-                }*/
+                }
 
                 var cloneNode = node.cloneNode(false);
                 if (cloneNode.hasAttribute && cloneNode.hasAttribute('id'))

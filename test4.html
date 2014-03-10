@@ -35,7 +35,11 @@
         <h2>Items</h2>
         <ul data-bind="items">
             <li>
+                <span data-bind="../items/0/description"></span>
                 <span data-bind="description"></span>
+                So, jetzt kommt ein Test:
+                {{description}} {{../description}}
+                Ende des Tests.
                 <ul data-bind="subitems">
                     <li>
                         <input data-bind="$self">
