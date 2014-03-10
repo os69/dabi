@@ -10,91 +10,69 @@
 
     <script src="eventing.js"></script>
     <script src="dombinding.js"></script>
-
     <title>Binding Declarative Approach</title>
 
 </head>
 
 <body>
 
-    <div data-def-template="bindtest">
-        Bindtest:
-        <span data-bind="$self" data-test="{{$self}}"></span>
-    </div>
-
-    <b data-def-template="Bold" data-bind="$self"></b>
-
-    <div data-def-template="Status">
-        <span data-bind="status"></span>
-        <span data-bind="description"></span>
-    </div>
-
-    <li data-def-template="Item">
-        <span data-bind="description"></span>
-        <button id="del">Del</button>
-        <script type="text/javascript">
-            dombinding.templateScript(function(ctx,item,list){            
-                    document.getElementById("del#"+ctx.id).addEventListener("click",function(){
-                       var index = list.indexOf(item);
-                       list.splice(index,1);
-                    });
-            });
-        </script>
-    </li>
 
     <div data-bind="salesOrder">
-        <h1>Sales Order</h1>
-        <h2>Main</h2>
-        <span data-bind="id"></span>
-        <input data-bind="description" type="text">
-        <span data-bind="description"></span>
-        <h2>Status 1</h2>
-        <div data-bind="status" data-template="Status"></div>
-        <h2>Status 2</h2>
+        <h1>Sales Order:
+           
+        </h1>
+
+         <input data-bind="description">
+        
+        <h2>Status</h2>
         <div data-bind="status">
-            status:
-            <input data-bind="status" data-test="{{status}}">
-            <span data-bind="status" data-template="bindtest"></span>
-            descr:
+            Status code:
+            <span data-bind="code"></span>
+            <br>Description:
             <span data-bind="description"></span>
-            descr-bold:
-            <span data-bind="description" data-template="Bold"></span>
-            <br>Balduin:
-            <span id="balduin"></span>
-            <script>
-                dombinding.templateScript(function(ctx,obj){            
-                    var span = document.getElementById("balduin#"+ctx.id);
-                    dombinding.bindAttribute(obj,"description",span,function(val){
-                        return val.toUpperCase();
-                    });
-                });
-            </script>
         </div>
-        <h2>Items 1</h2>
-        <ul data-bind="items" data-template="Item"></ul>
-        <h2>Items 2</h2>
+
+        <h2>Items</h2>
         <ul data-bind="items">
             <li>
                 <span data-bind="description"></span>
                 <ul data-bind="subitems">
                     <li>
                         <input data-bind="$self">
-                        <span data-bind="$self" data-template="Bold"></span>
-                        <span data-bind="$self" data-test="{{$self}}"></span>
+                        <span data-bind="$self"></span>
                     </li>
                 </ul>
+                <button id="delitems">Del</button>
+                <script>
+                    dombinding.templateScript(function(ctx,item,list){
+                        var delButton=document.getElementById("delitems#"+ctx.id);
+                        delButton.addEventListener('click',function(){
+                            var index = list.indexOf(item);
+                            list.splice(index,1);
+                        })
+                    });
+                </script>
             </li>
         </ul>
-
-
+        <button id="additem">Add</button>
+        <script>
+            dombinding.templateScript(function(ctx,salesOrder){
+                var addButton=document.getElementById("additem#"+ctx.id);
+                addButton.addEventListener('click',function(){
+                    salesOrder.items.push({description:'new', subitems:['a']});
+                });
+            });
+        </script>
     </div>
 
+    <div id="testtext"></div>
+    
     <script>
         salesOrder = {
                     id: 10,
                     description: 'Big Order',
                     status: {
-                        status: 1,
+                        code: 1,
                         description: 'Status 1'
                     },
                     items: [
@@ -108,6 +86,8 @@
                     }
                 ]
                 };
+        
+     
     </script>
 
 
