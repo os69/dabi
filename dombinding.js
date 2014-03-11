@@ -597,7 +597,7 @@
         // call template interpreter on document ready
         // ===================================================================
         module.onDocumentReady(function () {
-            (new module.TemplateInterpreter(document)).run();
+           // (new module.TemplateInterpreter(document)).run();
         });
 
         return module;

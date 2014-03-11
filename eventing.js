@@ -241,6 +241,8 @@
 
             raiseEvent: function (sender, signal, message) {
 
+                sender = sender || module.defaultSender;
+
                 var event = new module.Event({
                     sender: sender,
                     signal: signal,
