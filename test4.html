@@ -16,15 +16,37 @@
 
 <body>
 
+    <div data-def-template="dropdown(obj,objContext,items)">
+        <select data-bind="items">
+            <option data-bind="$self">
+                <script>
+                    dombinding.templateScript(function(ctx,item,itemList){
+                        var object = ctx.env.value("../$1/obj");
+                        var attributeName = ctx.env.value("../$1/attributeName");                        
+                        dombinding.bindAttributeToElementAttribute(object,attributeName,ctx.parentNode,'selected',function(value){
+                            if(value===item)
+                                return "selected";
+                            else
+                                return "$remove";
+                        });
+                    });
+                </script>
+            </option>
+        </select>
+    </div>
+
 
     <div data-bind="salesOrder">
         <h1>Sales Order:
-           
+
         </h1>
 
-         <input data-bind="description">
-        
+        <input data-bind="description">
+
         <h2>Status</h2>
+
+        <div data-bind="status.code" data-template="dropdown" data-template-parameters="codes"></div>
+
         <div data-bind="status">
             Status code:
             <span data-bind="code"></span>
@@ -37,9 +59,7 @@
             <li>
                 <span data-bind="../items/0/description"></span>
                 <span data-bind="description"></span>
-                So, jetzt kommt ein Test:
-                {{description}} {{../description}}
-                Ende des Tests.
+                So, jetzt kommt ein Test: {{description}} {{../description}} Ende des Tests.
                 <ul data-bind="subitems">
                     <li>
                         <input data-bind="$self">
@@ -70,13 +90,15 @@
     </div>
 
     <div id="testtext"></div>
-    
+
     <script>
+        codes = [1,2,3];
+        
         salesOrder = {
                     id: 10,
                     description: 'Big Order',
                     status: {
-                        code: 1,
+                        code: 2,
                         description: 'Status 1'
                     },
                     items: [
@@ -90,8 +112,6 @@
                     }
                 ]
                 };
-        
-     
     </script>
 
 

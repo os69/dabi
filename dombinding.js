@@ -36,8 +36,20 @@
         // ===================================================================
         // bind object to dom element
         // ===================================================================        
-        module.bindObject = function (obj, objNode, transObj) {
-            var node = transObj(obj);
+        module.bindObject = function (obj, objNode, transObj, objContext) {
+
+            // assemble arguments for transformation
+            var transArgs = [];
+            transArgs.push(obj, objContext);
+            for (var i = 4; i < arguments.length; i++) {
+                var arg = arguments[i];
+                transArgs.push(arg);
+            }
+
+            // call transformation
+            var node = transObj.apply(null, transArgs);
+
+            // replace target node by created object node
             objNode.parentNode.insertBefore(node, objNode);
             objNode.parentNode.removeChild(objNode);
             return node;
@@ -181,10 +193,12 @@
         // ===================================================================
         // connect template script function to script-dom-element (called during pageload)
         // ===================================================================        
-        module.templateScript = function (script) {
+        module.templateScript = function (script, delayed) {
             var scriptTags = document.getElementsByTagName('SCRIPT');
             var scriptTag = scriptTags.item(scriptTags.length - 1);
+            if (delayed === undefined) delayed = true;
             scriptTag.templateScript = script;
+            scriptTag.templateScriptDelayed = delayed;
         };
 
         // ===================================================================
@@ -258,19 +272,13 @@
                 return this.stack[this.stack.length - 1];
             },
 
-            push: function (args) {
+            push: function (args, parameterNames) {
                 var obj = {};
                 for (var i = 0; i < args.length; i++) {
                     var arg = args[i];
                     obj['$' + i] = arg;
-                    switch (i) {
-                    case 0:
-                        obj.$self = arg;
-                        obj.$item = arg;
-                        break;
-                    case 1:
-                        obj.$list = arg;
-                    }
+                    var parameterName = parameterNames[i];
+                    if (parameterName) obj[parameterName] = arg;
                 }
                 this.stack.push(obj);
                 return this;
@@ -294,7 +302,16 @@
                 var stackIndex = this.determineStackIndex(path);
                 path = stackIndex.path;
 
-                // if no root attribute is specified -> use $self
+                // search stack starting from stack index
+                for (var i = stackIndex.index; i >= 0; --i) {
+                    var obj = this.stack[i];
+                    var result = module.getByPath(obj, path);
+                    // artifical root obj cannot be used for attribute binding -> clear
+                    if (result && result.obj === obj) result.attributeName = null;
+                    if (result) return result;
+                }
+
+                // try again search in $self
                 if (path[0] !== '$') path = '$self.' + path;
 
                 // search stack starting from stack index
@@ -366,7 +383,7 @@
                     var transformationName = node.getAttribute('data-template');
                     return this.transformations[transformationName];
                 } else {
-                    return this.parseTransformationFromTemplate(node, false, context.env);
+                    return this.parseTransformationFromTemplate(node, false, context.env, ['$self', '$selfContext']);
                 }
             },
 
@@ -375,13 +392,13 @@
                     var transformationName = node.getAttribute('data-template');
                     return this.transformations[transformationName];
                 } else {
-                    return this.parseTransformationFromTemplate(node.firstElementChild, true, context.env);
+                    return this.parseTransformationFromTemplate(node.firstElementChild, true, context.env, ['$self', '$list', '$domList']);
                 }
             },
 
             fillCloneNode: function (node, context, resolveResult) {
                 if (node.tagName === 'INPUT') {
-                    var item = context.env.value('$item');
+                    var item = context.env.value('$self');
                     var list = context.env.value('$list');
                     node.value = item;
                     node.setAttribute('type', 'text');
@@ -402,32 +419,40 @@
                 // script exists?
                 if (!node.templateScript) return;
 
-                // schedule delayed execution
-                if (self.scripts.length === 0) {
-                    setTimeout(function () {
-                        self.executeScripts();
-                    }, 0);
-                }
-
-                // register script
-                self.scripts.push(function () {
+                // create script function
+                var templateFunction = function () {
                     var args = [];
                     var ctx = {
                         id: context.transId,
                         parentNode: parentNode,
                         env: context.env,
-                        getElementById : function(id){
-                            return document.getElementById(id+"#"+context.transId);
+                        getElementById: function (id) {
+                            return document.getElementById(id + "#" + context.transId);
                         }
                     };
                     args.push(ctx);
                     var obj = context.env.getLast();
-                    for(var i=0;i<9;++i){
-                        var attrName = "$"+i;
-                        if(obj[attrName]) args.push(obj[attrName]);
+                    for (var i = 0; i < 9; ++i) {
+                        var attrName = "$" + i;
+                        if (obj[attrName]) args.push(obj[attrName]);
                     }
                     node.templateScript.apply(node, args);
-                });
+                };
+
+                // execute
+                if (node.templateScriptDelayed) {
+                    // schedule delayed execution
+                    if (self.scripts.length === 0) {
+                        setTimeout(function () {
+                            self.executeScripts();
+                        }, 0);
+                    }
+                    // register for delayed execution
+                    self.scripts.push(templateFunction);
+                } else {
+                    // execute now
+                    templateFunction();
+                }
             },
 
             executeScripts: function () {
@@ -465,8 +490,10 @@
 
             processDefTemplate: function (node, context) {
                 var transName = node.getAttribute('data-def-template');
+                var parseResult = this.parseTemplateName(transName);
                 node.removeAttribute('data-def-template');
-                this.transformations[transName] = this.parseTransformationFromTemplate(node, true, context.env);
+                this.transformations[parseResult.templateName] =
+                    this.parseTransformationFromTemplate(node, true, context.env, parseResult.parameterNames);
                 node.parentNode.removeChild(node);
             },
 
@@ -524,10 +551,13 @@
 
                 cloneNode.removeAttribute('data-bind');
                 var resolveResult = context.env.resolvePath(bindName);
+                if (!resolveResult) {
+                    throw "Cannot resolve " + bindName;
+                }
                 switch (module.getType(resolveResult.value)) {
                 case 'simple':
                     if (node.hasAttribute('data-template')) {
-                        cloneNode = module.bindObject(resolveResult.value, cloneNode, this.getTransformation(node, context));
+                        cloneNode = this.bindObject(resolveResult, node, cloneNode, context);
                     } else {
                         if (!resolveResult.attributeName) {
                             this.fillCloneNode(cloneNode, context, resolveResult);
@@ -539,7 +569,7 @@
                     }
                     break;
                 case 'object':
-                    cloneNode = module.bindObject(resolveResult.value, cloneNode, this.getTransformation(node, context));
+                    cloneNode = module.bindObject(resolveResult.value, cloneNode, this.getTransformation(node, context), resolveResult);
                     break;
                 case 'array':
                     module.bindList(resolveResult.value, cloneNode, this.getListTransformation(node, context));
@@ -550,12 +580,62 @@
                 return cloneNode;
             },
 
-            parseTransformationFromTemplate: function (node, bindingActive, env) {
+            bindObject: function (resolveResult, node, cloneNode, context) {
+
+                // argument list
+                var args = [];
+
+                // standard arguments
+                args.push(resolveResult.value,
+                    cloneNode,
+                    this.getTransformation(node, context),
+                    resolveResult);
+
+                // aditional optional template parameters
+                if (node.hasAttribute('data-template-parameters')) {
+                    var parameters = node.getAttribute('data-template-parameters').split(',');
+                    for (var i = 0; i < parameters.length; i++) {
+                        var parameter = parameters[i];
+                        args.push(context.env.resolvePath(parameter).value);
+                    }
+                }
+
+                // call bind object
+                return module.bindObject.apply(module, args);
+
+            },
+
+            parseTemplateName: function (templateName) {
+
+                var result = {
+                    templateName: null,
+                    parameterNames: []
+                };
+
+                // split into template name and parameters
+                var parts = templateName.split(new RegExp("\\(([^\\)]+)\\)"));
+
+                // 1) template name
+                result.templateName = parts[0];
+
+                // 2) template parameters
+                var parameters = parts[1];
+                if (!parameters) return result;
+
+                parameters = parameters.split(",");
+                for (var i = 0; i < parameters.length; i++) {
+                    var parameter = parameters[i];
+                    result.parameterNames.push(parameter.trim());
+                }
+                return result;
+            },
+
+            parseTransformationFromTemplate: function (node, bindingActive, env, parameterNames) {
                 var self = this;
                 var transformation = function () {
                     var context = {
                         transId: module.generateId(),
-                        env: env.clone().push(arguments)
+                        env: env.clone().push(arguments, parameterNames)
                     };
                     return self.cloneNode(node, null, bindingActive, context);
                 };
@@ -563,8 +643,9 @@
             },
 
             run: function () {
-                var trans = this.parseTransformationFromTemplate(document.body, false, new module.Environment());
-                module.bindObject(window, document.body, trans);
+                var trans = this.parseTransformationFromTemplate(this.rootElement, false,
+                    new module.Environment(), ['$self', '$selfContext']);
+                module.bindObject(window, this.rootElement, trans);
             }
 
         };
@@ -597,7 +678,7 @@
         // call template interpreter on document ready
         // ===================================================================
         module.onDocumentReady(function () {
-           // (new module.TemplateInterpreter(document)).run();
+            (new module.TemplateInterpreter(document.body)).run();
         });
 
         return module;
