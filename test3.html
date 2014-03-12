@@ -9,7 +9,7 @@
     <script src="../lib/require.js" data-main="test3.js"></script>-->
 
     <script src="eventing.js"></script>
-    <script src="dombinding.js"></script>
+    <script src="dobi.js"></script>
     <script src="test3.js"></script>
 
     <title>Binding Declarative Approach</title>
@@ -18,11 +18,31 @@
 
 <body>
 
-    <div data-def-template="bindtest"> 
+    <div data-def-template="bindtest">
         Bindtest:
-        <span data-bind="$self" data-test="{{$self}}"></span>
+        <span data-bind="self" data-test="{{self}}"></span>
     </div>
-    
+
+    <b data-def-template="Bold" data-bind="self"></b>
+
+    <div data-def-template="Status">
+        <span data-bind="status"></span>
+        <span data-bind="description"></span>
+    </div>
+
+    <li data-def-template="Item">
+        <span data-bind="description"></span>
+        <button id="del">Del</button>
+        <script type="text/javascript">
+            dobi.script(function(info,params){            
+                    info.getElementById("del").addEventListener("click",function(){
+                       var index = params.list.indexOf(params.self);
+                       params.list.splice(index,1);
+                    });
+            });
+        </script>
+    </li>
+
     <div data-bind="salesOrder">
         <h1>Sales Order</h1>
         <h2>Main</h2>
@@ -40,16 +60,15 @@
             <span data-bind="description"></span>
             descr-bold:
             <span data-bind="description" data-template="Bold"></span>
-            <br>
-            Balduin:
+            <br>Balduin:
             <span id="balduin"></span>
             <script>
-                dombinding.templateScript(function(id,obj){            
-                    var span = document.getElementById("balduin#"+id);
-                    dombinding.bindAttribute(obj,"description",span,function(val){
+                dobi.script(function(info,params){            
+                    var span = info.getElementById("balduin");
+                    dobi.bindAttribute(params.self,"description",span,function(val){
                         return val.toUpperCase();
                     });
-                });                
+                });
             </script>
         </div>
         <h2>Items 1</h2>
@@ -60,34 +79,17 @@
                 <span data-bind="description"></span>
                 <ul data-bind="subitems">
                     <li>
-                        <input data-bind="$self">
-                        <span data-bind="$self" data-template="Bold"></span>
-                        <span data-bind="$self" data-test="{{$self}}"></span>
+                        <input data-bind="self">
+                        <span data-bind="self" data-template="Bold"></span>
+                        <span data-bind="self" data-test="{{self}}"></span>
                     </li>
                 </ul>
             </li>
         </ul>
     </div>
 
-    <b data-def-template="Bold" data-bind="$self"></b>
 
-    <div data-def-template="Status">
-        <span data-bind="status"></span>
-        <span data-bind="description"></span>
-    </div>
 
-    <li data-def-template="Item">
-        <span data-bind="description"></span>
-        <button id="del">Del</button>
-        <script type="text/javascript">
-            dombinding.templateScript(function(id,item,list){            
-                    document.getElementById("del#"+id).addEventListener("click",function(){
-                       var index = list.indexOf(item);
-                       list.splice(index,1);
-                    });
-            });
-        </script>
-    </li>
 
     <script>
         salesOrder = {
