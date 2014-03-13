@@ -36,13 +36,13 @@
         // ===================================================================
         // generic setter
         // ===================================================================
-        module.setProperty = function(obj,propertyName){
-            var args=[];
+        module.setProperty = function (obj, propertyName) {
+            var args = [];
             for (var i = 2; i < arguments.length; i++) {
                 var arg = arguments[i];
                 args.push(arg);
             }
-            return obj[setterName(propertyName)].apply(obj,args);            
+            return obj[setterName(propertyName)].apply(obj, args);
         };
 
         // ===================================================================
@@ -313,9 +313,15 @@
                 for (var i = stackIndex; i >= 0; --i) {
                     var obj = this.stack[i];
                     var result = module.getByPath(obj, path);
-                    // artifical root obj cannot be used for attribute binding -> clear
-                    if (result && result.obj === obj) result.attributeName = null;
-                    if (result) return result;
+                    if (result) {
+                        // artifical root obj cannot be used for attribute binding -> clear
+                        if (result.obj === obj) result.attributeName = null;
+                        // for self we can get the resolve result by context
+                        if (path === 'self' && obj.context) {
+                            return obj.context;
+                        }
+                        return result;
+                    }
                 }
 
                 // if nothing found -> try again with prefix self
