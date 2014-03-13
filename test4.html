@@ -13,10 +13,11 @@
     <div data-def-template="dropdown(items)">
         <select id="dropdown" data-bind="items">
             <option data-bind="self" value="{{self}}">
+                {{self}}
                 <script>
                     dobi.script(function(info,params){
-                        var object = info.value("../context/obj");
-                        var attributeName = info.value("../context/attributeName");                        
+                        var object = info.value("../../context/obj");
+                        var attributeName = info.value("../../context/attributeName");                        
                         dobi.bindAttributeToElementAttribute(object,attributeName,info.parentNode,'selected',function(value){
                             if(value===params.self) return "selected"; else return "$remove";
                         });

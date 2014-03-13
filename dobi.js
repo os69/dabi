@@ -62,8 +62,10 @@
             var node = transObj.apply(null, transArgs);
 
             // replace target node by created object node
-            objNode.parentNode.insertBefore(node, objNode);
-            objNode.parentNode.removeChild(objNode);
+            if (objNode.parentNode) {
+                objNode.parentNode.insertBefore(node, objNode);
+                objNode.parentNode.removeChild(objNode);
+            }
             return node;
         };
 
@@ -582,7 +584,19 @@
                 }
                 switch (module.getType(resolveResult.value)) {
                 case 'simple':
-                    if (node.hasAttribute('data-template')) {
+
+                    if (node.children.length > 0 || node.hasAttribute('data-template')) {
+                        cloneNode = this.bindObject(resolveResult, node, cloneNode, context);
+                    } else {
+                        if (!resolveResult.attributeName) {
+                            this.fillCloneNode(cloneNode, context, resolveResult);
+                        } else {
+                            module.bindAttribute(resolveResult.obj, resolveResult.attributeName, cloneNode);
+                        }
+                        this.processElementAttributes(cloneNode, context);
+                    }
+
+                    /*                    if (node.hasAttribute('data-template')) {
                         cloneNode = this.bindObject(resolveResult, node, cloneNode, context);
                     } else {
                         if (!resolveResult.attributeName) {
@@ -592,7 +606,8 @@
                         }
                         this.processElementAttributes(cloneNode, context);
                         this.cloneChildren(node, cloneNode, context, ['SCRIPT']);
-                    }
+                    }*/
+
                     break;
                 case 'object':
                     cloneNode = this.bindObject(resolveResult, node, cloneNode, context);
