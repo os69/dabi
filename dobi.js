@@ -3,6 +3,9 @@
 /*global setTimeout */
 /*global Node */
 
+/* unsubscribe on node delete  recursively*/
+
+
 (function () {
 
     var define = window.define || function (deps, mod) {
@@ -75,7 +78,7 @@
         module.bindDict = function (obj, node, transItem) {
 
             // service for setting key / value pair in dict
-            obj.dictSet = function (key, value) {
+            obj.dictSet = obj.dictSet || function (key, value) {
                 if (this[key] !== undefined) {
                     this[key] = value;
                     eventing.raiseEvent(this, 'ValueChanged', {
@@ -92,7 +95,7 @@
             };
 
             // service for deleting a key in the dict
-            obj.dictDel = function (key) {
+            obj.dictDel = obj.dictDel || function (key) {
                 delete this[key];
                 eventing.raiseEvent(this, 'KeyDeleted', key);
             };
@@ -111,7 +114,7 @@
                 });
                 eventing.subscribe(item, 'setKey', item, function (event) {
                     obj.dictDel(item.origKey);
-                    obj.dictSet(item.key, event.message.args[0]);
+                    obj.dictSet(item.key, item.value);
                 });
                 eventing.subscribe(obj, 'ValueChanged', item, function (event) {
                     if (event.message.key === item.key && item.value !== event.message.value) item.setValue(event.message.value);
@@ -143,6 +146,7 @@
                 for (var i = 0; i < list.length; i++) {
                     var item = list[i];
                     if (item.origKey === deletedKey) {
+                        eventing.deleteSubscriptions(item);
                         list.splice(i, 1);
                         return;
                     }
@@ -202,7 +206,10 @@
             } else {
                 switch (node.tagName) {
                 case 'INPUT':
-                    module._bindInputField(obj, propertyName, node, trans1, trans2);
+                    if (node.getAttribute('type') === 'checkbox')
+                        module._bindCheckbox(obj, propertyName, node, trans1, trans2);
+                    else
+                        module._bindInputField(obj, propertyName, node, trans1, trans2);
                     break;
                 default:
                     module._bindText(obj, propertyName, node, trans1);
@@ -229,6 +236,28 @@
 
             inputField.addEventListener('change', function (event) {
                 eventing.raiseMethodEvent(inputField, "dummyVal", [inputField.value]);
+            });
+
+        };
+
+        // ===================================================================
+        // bind attribute of object to a checkox (bidirectional binding)
+        // ===================================================================        
+        module._bindCheckbox = function (obj, propertyName, inputField, trans1, trans2) {
+
+            inputField.checked = !!(trans1 ? trans1(obj[propertyName]) : obj[propertyName]);
+
+            generateSetter(obj, propertyName);
+
+            eventing.connect(obj, setterName(propertyName), inputField, "dummyVal", function (val) {
+                inputField.checked = !!(trans1 ? trans1(val) : val);
+                return eventing.noMethodCall;
+            }, function (val) {
+                return [trans2 ? trans2(val) : val];
+            });
+
+            inputField.addEventListener('change', function (event) {
+                eventing.raiseMethodEvent(inputField, "dummyVal", [inputField.checked]);
             });
 
         };
@@ -688,7 +717,6 @@
 
                 switch (binding.bindType || module.getType(resolveResult.value)) {
                 case 'simple':
-
                     if (node.children.length > 0 || node.hasAttribute('data-template')) {
                         cloneNode = this.bindObject(resolveResult, node, cloneNode, context);
                     } else {
@@ -699,19 +727,6 @@
                         }
                         this.processElementAttributes(cloneNode, context);
                     }
-
-                    /*                    if (node.hasAttribute('data-template')) {
-                        cloneNode = this.bindObject(resolveResult, node, cloneNode, context);
-                    } else {
-                        if (!resolveResult.attributeName) {
-                            this.fillCloneNode(cloneNode, context, resolveResult);
-                        } else {
-                            module.bindAttribute(resolveResult.obj, resolveResult.attributeName, cloneNode);
-                        }
-                        this.processElementAttributes(cloneNode, context);
-                        this.cloneChildren(node, cloneNode, context, ['SCRIPT']);
-                    }*/
-
                     break;
                 case 'object':
                     cloneNode = this.bindObject(resolveResult, node, cloneNode, context);

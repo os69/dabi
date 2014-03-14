@@ -259,7 +259,7 @@
 
             },
 
-            deleteObject: function (obj) {
+            deleteSubscriptions: function (obj) {
                 var receivers = this.getEventProperties(obj).getAllReceivers();
                 for (var i = 0; i < receivers.length; i++) {
                     var receiverData = receivers[i];

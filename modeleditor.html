@@ -37,12 +37,12 @@
     </div>
 
     <div data-bind="editor.model">
-
+  
         <ul data-bind="Dimensions[0].Attributes">
             <li>
                 <span data-bind="Id"></span>
                 <span data-bind="Name"></span>
-                <div data-bind="AccessUsage.FreestyleSearch" data-template="dropdown" data-template-parameters="editor.booleanDropdown"></div>
+                <input type="checkbox" data-bind="AccessUsage.FreestyleSearch">
                 <ul data-bind="dict:PresentationUsage">
                     <li>
                         <input data-bind="key">
@@ -56,7 +56,7 @@
             <li>
                 <span data-bind="Id"></span>
                 <span data-bind="Name"></span>
-                <div data-bind="AccessUsage.FreestyleSearch" data-template="dropdown" data-template-parameters="editor.booleanDropdown"></div>
+                <input type="checkbox" data-bind="AccessUsage.FreestyleSearch">
                 <ul data-bind="dict:PresentationUsage">
                     <li>
                         <input data-bind="key">
@@ -75,7 +75,7 @@
                 </ul>
             </li>
         </ul>
-
+      
 
     </div>
 
