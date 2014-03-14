@@ -70,6 +70,88 @@
         };
 
         // ===================================================================
+        // bind dic to dom element 
+        // ===================================================================        
+        module.bindDict = function (obj, node, transItem) {
+
+            // service for setting key / value pair in dict
+            obj.dictSet = function (key, value) {
+                if (this[key] !== undefined) {
+                    this[key] = value;
+                    eventing.raiseEvent(this, 'ValueChanged', {
+                        key: key,
+                        value: value
+                    });
+                } else {
+                    this[key] = value;
+                    eventing.raiseEvent(this, 'KeyAdded', {
+                        key: key,
+                        value: value
+                    });
+                }
+            };
+
+            // service for deleting a key in the dict
+            obj.dictDel = function (key) {
+                delete this[key];
+                eventing.raiseEvent(this, 'KeyDeleted', key);
+            };
+
+            // generate item
+            var generateItem = function (property, value) {
+                var item = {
+                    key: property,
+                    origKey: property,
+                    value: value
+                };
+                generateSetter(item, 'key');
+                generateSetter(item, 'value');
+                eventing.subscribe(item, 'setValue', item, function (event) {
+                    obj.dictSet(item.key, event.message.args[0]);
+                });
+                eventing.subscribe(item, 'setKey', item, function (event) {
+                    obj.dictDel(item.origKey);
+                    obj.dictSet(item.key, event.message.args[0]);
+                });
+                eventing.subscribe(obj, 'ValueChanged', item, function (event) {
+                    if (event.message.key === item.key && item.value !== event.message.value) item.setValue(event.message.value);
+                });
+                return item;
+            };
+
+            // create list from dict
+            var list = [];
+            for (var property in obj) {
+                if (!obj.hasOwnProperty(property)) continue;
+                var value = obj[property];
+                if (typeof (value) === 'function') continue;
+                if (property[0] === '_') continue;
+                list.push(generateItem(property, value));
+            }
+
+            // bind list to node
+            module.bindList(list, node, transItem);
+
+            eventing.subscribe(obj, 'KeyAdded', list, function (event) {
+                var key = event.message.key;
+                var value = event.message.value;
+                list.push(generateItem(key, value));
+            });
+
+            eventing.subscribe(obj, 'KeyDeleted', list, function (event) {
+                var deletedKey = event.message;
+                for (var i = 0; i < list.length; i++) {
+                    var item = list[i];
+                    if (item.origKey === deletedKey) {
+                        list.splice(i, 1);
+                        return;
+                    }
+                }
+            });
+
+        };
+
+        // ===================================================================
         // bind list to dom element (ul)
         // ===================================================================        
         module.bindList = function (list, domList, transItem) {
@@ -363,6 +445,7 @@
         module.getType = function (obj) {
             if (typeof (obj) === 'string') return 'simple';
             if (typeof (obj) === 'number') return 'simple';
+            if (typeof (obj) === 'boolean') return 'simple';
             if (typeof (obj) === 'object') {
                 if (Object.prototype.toString.call(obj) === '[object Array]') return 'array';
                 return 'object';
@@ -546,6 +629,26 @@
                 }
             },
 
+            parseBindAttribute: function (node) {
+
+                if (!node.getAttribute) return false;
+
+                var bind = node.getAttribute('data-bind');
+                if (!bind) return false;
+
+                var parts = bind.split(new RegExp(":"));
+                if (parts.length === 1)
+                    return {
+                        bindType: null,
+                        bindName: parts[0]
+                    };
+                else
+                    return {
+                        bindType: parts[0],
+                        bindName: parts[1]
+                    };
+            },
+
             cloneNode: function (node, cloneParentNode, bindingActive, context) {
 
                 if (node.getAttribute && node.getAttribute('data-def-template')) {
@@ -568,21 +671,22 @@
                     cloneNode.setAttribute('id', cloneNode.getAttribute('id') + '#' + context.transId);
                 if (cloneParentNode) cloneParentNode.appendChild(cloneNode);
 
-                var bindName = false;
-                if (node.getAttribute) bindName = node.getAttribute('data-bind');
+                var binding = this.parseBindAttribute(node);
 
-                if (!bindName || !bindingActive) {
+                if (!binding || !bindingActive) {
                     this.cloneChildren(node, cloneNode, context);
                     this.processElementAttributes(cloneNode, context);
                     return cloneNode;
                 }
 
                 cloneNode.removeAttribute('data-bind');
-                var resolveResult = context.env.resolvePath(bindName);
+                var resolveResult = context.env.resolvePath(binding.bindName);
                 if (!resolveResult) {
-                    throw "Cannot resolve " + bindName;
+                    throw "Cannot resolve " + binding.bindName;
                 }
-                switch (module.getType(resolveResult.value)) {
+
+
+                switch (binding.bindType || module.getType(resolveResult.value)) {
                 case 'simple':
 
                     if (node.children.length > 0 || node.hasAttribute('data-template')) {
@@ -614,6 +718,10 @@
                     break;
                 case 'array':
                     module.bindList(resolveResult.value, cloneNode, this.getListTransformation(node, context));
+                    this.processElementAttributes(cloneNode, context);
+                    break;
+                case 'dict':
+                    module.bindDict(resolveResult.value, cloneNode, this.getListTransformation(node, context));
                     this.processElementAttributes(cloneNode, context);
                     break;
                 }
@@ -719,8 +827,9 @@
         // call template interpreter on document ready
         // ===================================================================
         module.onDocumentReady(function () {
-            (new module.TemplateInterpreter(document.body)).run();
+            //(new module.TemplateInterpreter(document.body)).run();
         });
+
 
         return module;
     });

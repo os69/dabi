@@ -1,6 +1,11 @@
 /* global window*/
-(function ($) {
+/* global document*/
+(function (global, $, dobi) {
 
+
+    // =======================================================================
+    // repository load & save
+    // =======================================================================
 
     var getMetaData = function () {
 
@@ -18,7 +23,7 @@
             "ServiceVersion": 204
         };
 
-        var params = {
+        params = {
             "ModelPersistence": {
                 "DataSource": {
                     "PackageName": "bics.basic",
@@ -27,18 +32,43 @@
                 },
                 "Action": "Get"
             }
-        }
+        };
 
 
         $.get('/sap/bc/ina/service/v2/GetResponse', {
             "Request": JSON.stringify(params)
         }).done(function (data) {
-            alert("ok");
+
         });
 
     };
 
+    var repository = {
 
-    getMetaData();
+        getModel: function (name, cb) {
 
-})(window.$);
+            $.ajax({
+                url: 'data2.js',
+                dataType: 'text'
+            }).done(function (data) {
+                data = JSON.parse(data);
+                cb(data.Model);
+            });
+        }
+
+    };
+
+    // =======================================================================
+    // main
+    // =======================================================================
+
+    repository.getModel('test', function (model) {
+        
+        var editor = window.editor = {};
+        editor.model = model;
+        editor.booleanDropdown = ['true','false'];
+        new dobi.TemplateInterpreter(document.body).run();
+    
+    });
+
+})(window, window.$, window.dobi);

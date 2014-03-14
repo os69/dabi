@@ -302,6 +302,7 @@
                     // do we need to call the method?
                     var method = this[receiverMethodName];
                     if (!method || args === module.noMethodCall) {
+                        if (args === module.noMethodCall) args = event.message.args;
                         module.raiseEvent(this, receiverMethodName, {
                             args: args,
                             processedObjects: event.message.processedObjects
