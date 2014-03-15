@@ -356,8 +356,8 @@ require(["map", "eventing", "list", "dobi"], function (map, eventing, list, domb
     // =========================================================================
     //testUI1();
     //testUI2();
-    //testUI3();
+    testUI3();
     //testUI4();
-    testUI5();
+    //testUI5();
 
 });

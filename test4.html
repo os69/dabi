@@ -10,106 +10,125 @@
 
 <body>
 
-    <div data-def-template="dropdown(items)">
-        <select id="dropdown" data-bind="items">
-            <option data-bind="self" value="{{self}}">
-                {{self}}
-                <script>
-                    dobi.script(function(info,params){
-                        var object = info.value("../../context/obj");
-                        var attributeName = info.value("../../context/attributeName");                        
-                        dobi.bindAttributeToElementAttribute(object,attributeName,info.parentNode,'selected',function(value){
-                            if(value===params.self) return "selected"; else return "$remove";
+    <div id="templates">
+        <div data-def-template="dropdown(items)">
+            <select id="dropdown" data-bind="items">
+                <option data-bind="self" value="{{self}}">
+                    {{self}}
+                    <script>
+                        dobi.script(function(info, params) {
+                            var object = info.value("../../context/obj");
+                            var attributeName = info.value("../../context/attributeName");
+                            dobi.bindAttributeToElementAttribute(object, attributeName, info.parentNode, 'selected', function(value) {
+                                if (value === params.self) return "selected";
+                                else return "$remove";
+                            });
                         });
+                    </script>
+                </option>
+            </select>
+            <script>
+                dobi.script(function(info, params) {
+                    info.getElementById('dropdown').addEventListener('click', function() {
+                        dobi.setProperty(params.context.obj, params.context.attributeName, info.getElementById('dropdown').value);
                     });
-                </script>
-            </option>
-        </select>
-        <script>
-            dobi.script(function(info,params){
-                info.getElementById('dropdown').addEventListener('click',function(){
-                    dobi.setProperty(params.context.obj,params.context.attributeName,info.getElementById('dropdown').value);
                 });
-            });
-        </script>
-    </div>
-
-    <div data-bind="salesOrder">
-        <h1>Sales Order:
-
-        </h1>
-
-        <input data-bind="description">
-
-        <h2>Status</h2>
-
-        <div data-bind="status.code" data-template="dropdown" data-template-parameters="codes"></div>
-        <div data-bind="status.code" data-template="dropdown" data-template-parameters="codes"></div>
-
-        <div data-bind="status">
-            Status code:
-            <span data-bind="code"></span>
-            <br>Description:
-            <span data-bind="description"></span>
+            </script>
         </div>
 
-        <h2>Items</h2>
-        <ul data-bind="items">
-            <li>
-                <span data-bind="../items/0/description"></span>
-                <span data-bind="description"></span>
-                So, jetzt kommt ein Test: {{description}} {{../description}} Ende des Tests.
-                <ul data-bind="subitems">
-                    <li>
-                        <input data-bind="self">
-                        <span data-bind="self"></span>
-                    </li>
-                </ul>
-                <button id="delitems">Del</button>
-                <script>
-                    dobi.script(function(info,parameters){
-                        info.getElementById("delitems").addEventListener('click',function(){
-                            var index = parameters.list.indexOf(parameters.self);
-                            parameters.list.splice(index,1);
-                        })
-                    });
-                </script>
-            </li>
-        </ul>
-        <button id="additem">Add</button>
-        <script>
-            dobi.script(function(info, parameters){
-                var salesOrder = parameters.self;
-                info.getElementById("additem").addEventListener('click',function(){
-                    salesOrder.items.push({description:'new', subitems:['a']});
-                });
-            });
-        </script>
-    </div>
+        <div data-bind="salesOrder">
+            <h1>Sales Order:
 
+            </h1>
+
+            <input data-bind="description">
+
+            <h2>Status</h2>
+
+            <div data-bind="status.code" data-template="dropdown" data-template-parameters="codes"></div>
+            <div data-bind="status.code" data-template="dropdown" data-template-parameters="codes"></div>
+
+            <div data-bind="status">
+                Status code:
+                <span data-bind="code"></span>
+                <br>Description:
+                <span data-bind="description"></span>
+            </div>
+
+            <h2>Items</h2>
+            <ul data-bind="items">
+                <li>
+                    <span data-bind="../items/0/description"></span>
+                    <span data-bind="description"></span>
+                    So, jetzt kommt ein Test: {{description}} {{../description}} Ende des Tests.
+                    <ul data-bind="subitems">
+                        <li>
+                            <input data-bind="self">
+                            <span data-bind="self"></span>
+                        </li>
+                    </ul>
+                    <button id="delitems">Del</button>
+                    <script>
+                        dobi.script(function(info, parameters) {
+                            info.getElementById("delitems").addEventListener('click', function() {
+                                var index = parameters.list.indexOf(parameters.self);
+                                parameters.list.splice(index, 1);
+                            })
+                        });
+                    </script>
+                </li>
+            </ul>
+            <button id="additem">Add</button>
+            <script>
+                dobi.script(function(info, parameters) {
+                    var salesOrder = parameters.self;
+                    info.getElementById("additem").addEventListener('click', function() {
+                        salesOrder.items.push({
+                            description: 'new',
+                            subitems: ['a']
+                        });
+                    });
+                });
+            </script>
+        </div>
+
+    </div>
     <div id="testtext"></div>
 
+    <div id="target"></div>
+
     <script>
-        codes = ["1","2","3"];
-        
+        codes = ["1", "2", "3"];
+
         salesOrder = {
-                    id: 10,
-                    description: 'Big Order',
-                    status: {
-                        code: "2",
-                        description: 'Status 1'
-                    },
-                    items: [
-                        {
-                            description: 'item1',
-                            subitems: ['a', 'b', 'c']
-                    },
-                        {
-                            description: 'item2',
-                            subitems: ['x', 'y', 'z']
-                    }
-                ]
-                };
+            id: 10,
+            description: 'Big Order',
+            status: {
+                code: "2",
+                description: 'Status 1'
+            },
+            items: [{
+                description: 'item1',
+                subitems: ['a', 'b', 'c']
+            }, {
+                description: 'item2',
+                subitems: ['x', 'y', 'z']
+            }]
+        };
+
+        status1 = {
+            code: "10",
+            description: 'Status N1'
+        };
+        status2 = {
+            code: "20",
+            description: 'Status N2'
+        };
+
+
+
+        new dobi.TemplateInterpreter(document.getElementById('templates'), document.getElementById('target')).run();
+        document.getElementById('templates').parentNode.removeChild(document.getElementById('templates'));
     </script>
 
 

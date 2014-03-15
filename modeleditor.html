@@ -12,74 +12,80 @@
 
 <body>
 
-    <div data-def-template="dropdown(items)">
-        <select id="dropdown" data-bind="items">
-            <option data-bind="self" value="{{self}}">
-                {{self}}
-                <script>
-                    dobi.script(function(info,params){
-                        var object = info.value("../../context/obj");
-                        var attributeName = info.value("../../context/attributeName");                        
-                        dobi.bindAttributeToElementAttribute(object,attributeName,info.parentNode,'selected',function(value){
-                            if(value===params.self) return "selected"; else return "$remove";
-                        });
-                    });
-                </script>
-            </option>
-        </select>
-        <script>
-            dobi.script(function(info,params){
-                info.getElementById('dropdown').addEventListener('click',function(){
-                    dobi.setProperty(params.context.obj,params.context.attributeName,info.getElementById('dropdown').value);
-                });
-            });
-        </script>
-    </div>
-
-    <div data-bind="editor.model">
-  
-        <ul data-bind="Dimensions[0].Attributes">
-            <li>
-                <span data-bind="Id"></span>
-                <span data-bind="Name"></span>
-                <input type="checkbox" data-bind="AccessUsage.FreestyleSearch">
-                <ul data-bind="dict:PresentationUsage">
-                    <li>
-                        <input data-bind="key">
-                        <input data-bind="value">
-                    </li>
-                </ul>
-            </li>
-        </ul>
-
-        <ul data-bind="Dimensions[0].Attributes">
-            <li>
-                <span data-bind="Id"></span>
-                <span data-bind="Name"></span>
-                <input type="checkbox" data-bind="AccessUsage.FreestyleSearch">
-                <ul data-bind="dict:PresentationUsage">
-                    <li>
-                        <input data-bind="key">
-                        <input data-bind="value">
-                        <button id="delpu">del</button>
-                        <script>
-                            dobi.script(function(info,params){
-                                info.getElementById('delpu').addEventListener('click',function(){
-                                    var pu = info.value('PresentationUsage');
-                                    var pair =  info.value('self');
-                                    pu.dictDel(pair.key);                                
-                                });
+    <div id="templates">
+        
+        <div data-def-template="dropdown(items)">
+            <select id="dropdown" data-bind="items">
+                <option data-bind="self" value="{{self}}">
+                    {{self}}
+                    <script>
+                        dobi.script(function(info, params) {
+                            var object = info.value("../../context/obj");
+                            var attributeName = info.value("../../context/attributeName");
+                            dobi.bindAttributeToElementAttribute(object, attributeName, info.parentNode, 'selected', function(value) {
+                                if (value === params.self) return "selected";
+                                else return "$remove";
                             });
-                        </script>
-                    </li>
-                </ul>
-            </li>
-        </ul>
-      
+                        });
+                    </script>
+                </option>
+            </select>
+            <script>
+                dobi.script(function(info, params) {
+                    info.getElementById('dropdown').addEventListener('click', function() {
+                        dobi.setProperty(params.context.obj, params.context.attributeName, info.getElementById('dropdown').value);
+                    });
+                });
+            </script>
+        </div>
+
+        <div data-bind="editor.model">
+
+            <ul data-bind="Dimensions[0].Attributes">
+                <li>
+                    <span data-bind="Id"></span>
+                    <span data-bind="Name"></span>
+                    <input type="checkbox" data-bind="AccessUsage.FreestyleSearch">
+                    <ul data-bind="dict:PresentationUsage">
+                        <li>
+                            <input data-bind="key">
+                            <input data-bind="value">
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            <ul data-bind="Dimensions[0].Attributes">
+                <li>
+                    <span data-bind="Id"></span>
+                    <span data-bind="Name"></span>
+                    <input type="checkbox" data-bind="AccessUsage.FreestyleSearch">
+                    <ul data-bind="dict:PresentationUsage">
+                        <li>
+                            <input data-bind="key">
+                            <input data-bind="value">
+                            <button id="delpu">del</button>
+                            <script>
+                                dobi.script(function(info, params) {
+                                    info.getElementById('delpu').addEventListener('click', function() {
+                                        var pu = info.value('PresentationUsage');
+                                        var pair = info.value('self');
+                                        pu.dictDel(pair.key);
+                                    });
+                                });
+                            </script>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+
+        </div>
 
     </div>
-
+    <div id="target"></div>
     <script src="modeleditor.js"></script>
+
 
 </body>
 

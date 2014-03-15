@@ -67,7 +67,8 @@
         var editor = window.editor = {};
         editor.model = model;
         editor.booleanDropdown = ['true','false'];
-        new dobi.TemplateInterpreter(document.body).run();
+        new dobi.TemplateInterpreter(document.getElementById('templates'),document.getElementById('target')).run();
+        document.getElementById('templates').parentNode.removeChild(document.getElementById('templates'));
     
     });
 
