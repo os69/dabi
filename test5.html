@@ -1,0 +1,171 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+    <script src="eventing.js"></script>
+    <script src="dobi.js"></script>
+    <title>Binding Declarative Approach</title>
+</head>
+
+<body>
+
+
+    <div id="templates">
+
+        <div data-def-template="status">
+            <h2>Status</h2>
+            <div>code:
+                <span data-bind="code"></span>
+            </div>
+            <div>description:
+                <span data-bind="description"></span>
+            </div>
+            <div>id:
+                <span data-bind="../id"></span>
+            </div>
+            <div data-bind="salesOrder/id"></div>
+        </div>
+
+        <div data-bind="salesOrder">
+            <h1>Sales Order</h1>
+            <div data-bind="id"></div>
+            <div data-bind="status">
+                <h2>Status</h2>
+                <div>code:
+                    <input data-bind="code">
+                </div>
+                <div data-bind="code">
+                    code1:
+                    <input data-bind=".">code2:
+                    <span data-bind="." test="{{.}}"></span>
+                    code3: {{.}}
+                </div>
+                <div>description:
+                    <span data-bind="description"></span>
+                </div>
+            </div>
+            <div data-bind="status" data-template="status"></div>
+            <ul data-bind="items">
+                <li>
+                    <span data-bind="pos"></span>
+                    <ul data-bind="subitems">
+                        <li>
+                            <span data-bind="."></span>
+                        </li>
+                    </ul>
+                    <ul data-bind="subitems">
+                        <li>
+                            <input data-bind=".">
+                        </li>
+                    </ul>
+
+                </li>
+            </ul>
+            <ul data-bind="dict:uigroups">
+                <li>
+                    <input data-bind="key">
+                    <input data-bind="value">
+                </li>
+            </ul>
+            <ul data-bind="dict:uigroups">
+                <li>
+                    <span data-bind="key"></span>
+                    <span data-bind="value"></span>
+                </li>
+            </ul>
+        </div>
+
+
+    </div>
+
+    <div id="target"></div>
+
+
+    <script>
+        salesOrder = {
+            id: '4711',
+            status: {
+                code: '1',
+                description: 'One'
+            },
+            items: [{
+                pos: '10',
+                description: 'Position 10',
+                subitems: ['a', 'b', 'c']
+            }, {
+                pos: '20',
+                description: 'Position 20',
+                subitems: ['a', 'b', 'c']
+            }, {
+                pos: '30',
+                description: 'Position 30',
+                subitems: ['a', 'b', 'c']
+            }],
+            uigroups: {
+                'title': '1',
+                'description': '2'
+            }
+        };
+
+        status1 = {
+            code: '1',
+            description: 'One'
+        };
+
+        status2 = {
+            code: '2',
+            description: 'Two'
+        };
+
+        /*dobi.bindString({
+            object: salesOrder,
+            name: 'id'
+        }, document.getElementById('string1'));
+
+        dobi.bindString({
+            object: salesOrder,
+            name: 'id'
+        }, document.getElementById('string2'));
+
+        dobi.bindObject({
+            object: salesOrder,
+            name: 'status'
+        }, document.getElementById('status'), function(property, node) {
+
+
+            var codeNode = document.createElement('div');
+            node.appendChild(codeNode);
+            dobi.bindString({
+                object: property.object.status,
+                name: 'code'
+            }, codeNode);
+
+            var descriptionNode = document.createElement('div');
+            node.appendChild(descriptionNode);
+            dobi.bindString({
+                object: property.object.status,
+                name: 'description'
+            }, descriptionNode);
+
+
+        });
+
+        salesOrder.setStatus(status2);
+
+        dobi.bindObject({
+                object: window,
+                name: 'salesOrder'
+            },
+            document.getElementById('salesorder'),
+            dobi.parseTransformationFromTemplate(document.getElementById('salesordertemplate')));*/
+
+        dobi.bindObject(window, document.getElementById('target'), dobi.parseTransformationFromTemplate(document.getElementById('templates')));
+
+         // salesOrder.items.splice(1,0,{pos:'25'});
+    </script>
+
+
+</body>
+
+</html>

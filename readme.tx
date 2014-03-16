@@ -1,0 +1,32 @@
+obj=propertyObj[propertyName]
+context = {propertyObject:obj, propertyName:propertyName, node:node}
+
+
+bindStringProperty(obj,attributeName,node,trans1,trans2)
+bindBooleanProperty(obj,attributeName,node,trans1,trans2)
+bindIntegerProperty(obj,attributeName,node,trans1,trans2)
+    trans1(value)
+
+bindObjectProperty(obj,attributeName,node,trans)
+    trans(value,context)
+
+bindListProperty(obj,attributeName,node,transItem)
+    transItem(obj,parentNode,parentObj,parentObjPropertyName,...)
+    
+bindDictProperty(obj,attributeName,node,transKeyValueItem)
+
+
+bindProperty(obj,attributeName,node,trans1,trans2)
+
+
+
+---------------------
+
+property = { obj:obj, name: name , value: value}
+
+bindStringProperty(property,node,trans)
+
+bindObjectProperty(property,node,trans)
+trans(property,node,paramProperty1,paramProperty2)
+
+no connect only subscribe to method calls by decorators
