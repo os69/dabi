@@ -54,6 +54,17 @@
                 data = JSON.parse(data);
                 cb(data.Model);
             });
+        },
+
+        getView: function (name, cb) {
+            $.ajax({
+                url: 'data1.js',
+                dataType: 'text'
+            }).done(function (data) {
+                data = JSON.parse(data);
+                cb(data.Cube);
+            });
+
         }
 
     };
@@ -63,13 +74,19 @@
     // =======================================================================
 
     repository.getModel('test', function (model) {
-        
-        var editor = window.editor = {};
-        editor.model = model;
-        editor.booleanDropdown = ['true','false'];
-        new dobi.TemplateInterpreter(document.getElementById('templates'),document.getElementById('target')).run();
-        document.getElementById('templates').parentNode.removeChild(document.getElementById('templates'));
-    
+        repository.getView('test', function (cube) {
+            
+            var editor = window.editor = {};
+            editor.model = model;            
+            editor.cube = cube;
+            
+            editor.currentDimension = cube.Dimensions[3];
+            
+            
+            dobi.bindObject(window, document.getElementById('target'), dobi.parseTransformationFromTemplate(document.getElementById('templates')));
+            document.getElementById('templates').parentNode.removeChild(document.getElementById('templates'));
+
+        });
     });
 
 })(window, window.$, window.dobi);

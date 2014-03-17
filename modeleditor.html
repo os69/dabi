@@ -13,35 +13,11 @@
 <body>
 
     <div id="templates">
+
         
-        <div data-def-template="dropdown(items)">
-            <select id="dropdown" data-bind="items">
-                <option data-bind="self" value="{{self}}">
-                    {{self}}
-                    <script>
-                        dobi.script(function(info, params) {
-                            var object = info.value("../../context/obj");
-                            var attributeName = info.value("../../context/attributeName");
-                            dobi.bindAttributeToElementAttribute(object, attributeName, info.parentNode, 'selected', function(value) {
-                                if (value === params.self) return "selected";
-                                else return "$remove";
-                            });
-                        });
-                    </script>
-                </option>
-            </select>
-            <script>
-                dobi.script(function(info, params) {
-                    info.getElementById('dropdown').addEventListener('click', function() {
-                        dobi.setProperty(params.context.obj, params.context.attributeName, info.getElementById('dropdown').value);
-                    });
-                });
-            </script>
-        </div>
+        <div data-bind="editor/model">
 
-        <div data-bind="editor.model">
-
-            <ul data-bind="Dimensions[0].Attributes">
+            <ul data-bind="Dimensions/0/Attributes">
                 <li>
                     <span data-bind="Id"></span>
                     <span data-bind="Name"></span>
@@ -65,19 +41,58 @@
                             <input data-bind="key">
                             <input data-bind="value">
                             <button id="delpu">del</button>
-                            <script>
-                                dobi.script(function(info, params) {
-                                    info.getElementById('delpu').addEventListener('click', function() {
-                                        var pu = info.value('PresentationUsage');
-                                        var pair = info.value('self');
-                                        pu.dictDel(pair.key);
-                                    });
-                                });
-                            </script>
                         </li>
                     </ul>
                 </li>
             </ul>
+
+        </div>
+
+        <div data-bind="editor">
+
+            <h1>Cube</h1>
+
+            <h2>All Dimensions</h2>
+            <select id="dropdown" data-bind="cube.Dimensions">
+                <option value="{{Name}}">
+                    {{Name}}
+                    <script>
+                        dobi.script(function(info) {
+                            dobi.bindAttributeToElementAttribute(info.resolve('/editor/currentDimension/Name'), 'selected', info.parentNode, function(name) {
+                                if (name === info.resolve('Name').value())
+                                    return 'selected';
+                                else
+                                    return '$remove';
+                            });
+                        });
+                    </script>
+                </option>
+            </select>
+            <script>
+                dobi.script(function(info) {
+                    var selectNode = info.getElementById('dropdown');
+                    selectNode.addEventListener('click', function() {
+                        var dimensions = info.resolve('/editor/cube/Dimensions').value();
+                        for (var i = 0; i < dimensions.length; ++i) {
+                            var dimension = dimensions[i];
+                            if (dimension.Name === selectNode.value) {
+                                info.resolve('/editor/currentDimension').set(dimension);
+                            }
+                        }
+                    });
+                });
+            </script>
+            
+            <h2>Current Dimension</h2>
+            <div data-bind="editor.currentDimension">
+                <span data-bind="Name"></span>
+                <ul data-bind="Attributes">
+                    <li data-bind="Name"></li>
+                </ul>
+            </div>
+
+
+
 
 
         </div>

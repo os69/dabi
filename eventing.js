@@ -394,6 +394,11 @@
                 module.subscribe(sender, senderMethodName, receiver, this.generateHandler(receiverMethodName, transformation));
             },
 
+            subscribeToMethodCall: function (sender, senderMethodName, receiver, handler) {
+                this.decorate(sender, senderMethodName);
+                module.subscribe(sender, senderMethodName, receiver, handler);
+            },
+
             raiseMethodEvent: function (sender, signal, args) {
                 var processedObjects = new module.ProcessedObjects();
                 processedObjects.addProcessedObject(sender, signal);

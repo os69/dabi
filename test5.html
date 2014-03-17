@@ -13,6 +13,12 @@
 
     <div id="templates">
 
+        <div data-def-template="test">
+            Test template
+            <span data-bind="param0"></span>
+            <span data-bind="param1/code"></span>
+        </div>
+
         <div data-def-template="status">
             <h2>Status</h2>
             <div>code:
@@ -27,6 +33,9 @@
             <div data-bind="salesOrder/id"></div>
         </div>
 
+    
+        <div data-bind="salesOrder" data-template="test" data-template-parameters="salesOrder/id,salesOrder/status"></div>
+    
         <div data-bind="salesOrder">
             <h1>Sales Order</h1>
             <div data-bind="id"></div>
@@ -59,7 +68,6 @@
                             <input data-bind=".">
                         </li>
                     </ul>
-
                 </li>
             </ul>
             <ul data-bind="dict:uigroups">
