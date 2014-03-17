@@ -14,7 +14,8 @@
 
     <div id="templates">
 
-        
+
+        <!-- model -->
         <div data-bind="editor/model">
 
             <ul data-bind="Dimensions/0/Attributes">
@@ -48,18 +49,16 @@
 
         </div>
 
-        <div data-bind="editor">
-
-            <h1>Cube</h1>
-
-            <h2>All Dimensions</h2>
-            <select id="dropdown" data-bind="cube.Dimensions">
-                <option value="{{Name}}">
-                    {{Name}}
+        <!-- dimensions -->
+        <div data-def-template="dropdown">
+            <select id="dropdown" data-bind="param0">
+                <option value="{{name}}">
+                    {{description}}
                     <script>
                         dobi.script(function(info) {
-                            dobi.bindAttributeToElementAttribute(info.resolve('/editor/currentDimension/Name'), 'selected', info.parentNode, function(name) {
-                                if (name === info.resolve('Name').value())
+                            var selectedProperty = info.resolve('../self');
+                            dobi.bindAttributeToElementAttribute(selectedProperty, 'selected', info.parentNode, function(value) {
+                                if (info.resolve('self/name').value() === value.name)
                                     return 'selected';
                                 else
                                     return '$remove';
@@ -70,30 +69,36 @@
             </select>
             <script>
                 dobi.script(function(info) {
-                    var selectNode = info.getElementById('dropdown');
-                    selectNode.addEventListener('click', function() {
-                        var dimensions = info.resolve('/editor/cube/Dimensions').value();
-                        for (var i = 0; i < dimensions.length; ++i) {
-                            var dimension = dimensions[i];
-                            if (dimension.Name === selectNode.value) {
-                                info.resolve('/editor/currentDimension').set(dimension);
+                    var list = info.resolve('param0').value();
+                    var dropdown = info.getElementById('dropdown');
+                    var selectedProperty = info.resolve('self');
+                    dropdown.addEventListener('click', function() {
+                        for (var i = 0; i < list.length; ++i) {
+                            var element = list[i];
+                            if (element.name === dropdown.value) {
+                                selectedProperty.set(element);
+                                break;
                             }
                         }
                     });
                 });
             </script>
-            
-            <h2>Current Dimension</h2>
-            <div data-bind="editor.currentDimension">
-                <span data-bind="Name"></span>
-                <ul data-bind="Attributes">
+        </div>
+
+
+        <div data-bind="editor/cube">
+
+            <h1>Cube</h1>
+
+            <h2>Dimensions</h2>
+            <div data-bind="currentDimension" data-template="dropdown" data-template-parameters="dimensionList"></div>
+            <h2>Attributes</h2>
+
+            <div data-bind="currentDimension">
+                <ul data-bind="dimension/Attributes">
                     <li data-bind="Name"></li>
                 </ul>
             </div>
-
-
-
-
 
         </div>
 

@@ -75,14 +75,23 @@
 
     repository.getModel('test', function (model) {
         repository.getView('test', function (cube) {
-            
+
             var editor = window.editor = {};
-            editor.model = model;            
+            editor.model = model;
             editor.cube = cube;
+
+           
             
-            editor.currentDimension = cube.Dimensions[3];
-            
-            
+            cube.dimensionList = [];
+            for (var i = 0; i < cube.Dimensions.length; ++i) {
+                cube.dimensionList.push({
+                    name: cube.Dimensions[i].Name,
+                    dimension: cube.Dimensions[i],
+                    description: cube.Dimensions[i].Name
+                });
+            }
+            cube.currentDimension = cube.dimensionList[2];
+
             dobi.bindObject(window, document.getElementById('target'), dobi.parseTransformationFromTemplate(document.getElementById('templates')));
             document.getElementById('templates').parentNode.removeChild(document.getElementById('templates'));
 

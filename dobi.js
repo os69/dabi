@@ -509,18 +509,24 @@
                 return env;
             },
 
-            set: function (name, value) {
-                this.data[name] = value;
+            determineStackIndex: function (path) {
+                var index = this.stack.length - 1;
+                while (path.indexOf("../") === 0) {
+                    index--;
+                    path = path.slice(3);
+                }
+                return {
+                    index: index,
+                    path: path
+                };
             },
 
-            get: function (name) {
-                for (var i = this.stack.length - 1; i >= 0; --i) {
-                    var data = this.stack[i];
-                    var value = data[name];
-                    if (value) return value;
-                }
-                return null;
-            }
+            /*get: function (path) {
+                var stackIndex = this.determineStackIndex(path);
+                var data = this.stack[stackIndex.index];
+                var value = data[stackIndex.path];
+                return value;
+            }*/
 
             /*            set: function (path, value) {
                 return this.resolve(path).set(value);
@@ -794,16 +800,24 @@
 
                 var self = this;
 
-                if (path === 'param1/code') {
-                    var dummy;
-                }
+                var determineStackIndex = function (path) {
+                    var index = self.env.stack.length - 1;
+                    while (path.indexOf("../") === 0) {
+                        index--;
+                        path = path.slice(3);
+                    }
+                    return {
+                        index: index,
+                        path: path
+                    };
+                };
 
                 var splitPath = function (path) {
                     return path.split(new RegExp("[\\./]"), 2);
                 };
 
-                var resolve = function (propertyName, path) {
-                    for (var i = self.env.stack.length - 1; i >= 0; --i) {
+                var resolve = function (index, propertyName, path) {
+                    for (var i = index; i >= 0; --i) {
                         var data = self.env.stack[i];
                         var property = data[propertyName];
                         if (!(property instanceof module.Property)) continue;
@@ -813,19 +827,16 @@
                     return null;
                 };
 
-                if (path[0] === '.' || path[0] === '/') {
-                    return resolve('self', path);
-                }
+                var stackIndex = determineStackIndex(path);
+                var index = stackIndex.index;
+                path = stackIndex.path;
+                if (path === '') return resolve(index,'self','.');
 
-                var parts = splitPath(path);
-                if (parts[0].indexOf('param') === 0) {
-                    if (parts.length === 1) parts[1] = '.';
-                    return resolve(parts[0], parts[1]);
-                } else {
-                    return resolve('self', path);
-                }
-
-
+                var parts = splitPath(stackIndex.path);
+                if (parts.length === 1) parts[1] = '.';
+                var property = resolve(stackIndex.index, parts[0], parts[1]);
+                if (property) return property;
+                return resolve(stackIndex.index, 'self', stackIndex.path);
 
             },
 
