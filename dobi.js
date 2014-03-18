@@ -509,7 +509,7 @@
                 return env;
             },
 
-            determineStackIndex: function (path) {
+            /*    determineStackIndex: function (path) {
                 var index = this.stack.length - 1;
                 while (path.indexOf("../") === 0) {
                     index--;
@@ -521,14 +521,14 @@
                 };
             },
 
-            /*get: function (path) {
+            get: function (path) {
                 var stackIndex = this.determineStackIndex(path);
                 var data = this.stack[stackIndex.index];
                 var value = data[stackIndex.path];
                 return value;
-            }*/
+            }
 
-            /*            set: function (path, value) {
+                        set: function (path, value) {
                 return this.resolve(path).set(value);
             },
 
@@ -605,10 +605,10 @@
         // ===================================================================
         // create transformation function from template
         // ===================================================================        
-        module.parseTransformationFromTemplate = function (node, env) {
+        module.parseTransformationFromTemplate = function (node, env, parameterNames) {
 
             return function () {
-                new module.TemplateExecutor(node, env, arguments).execute();
+                new module.TemplateExecutor(node, env, parameterNames, arguments).execute();
             };
 
         };
@@ -622,7 +622,7 @@
 
         module.TemplateExecutor.prototype = {
 
-            init: function (node, env, args) {
+            init: function (node, env, parameterNames, args) {
 
                 this.node = node;
 
@@ -630,6 +630,7 @@
                     this.env = env.clone();
                 else
                     this.env = new module.Environment();
+
                 this.env.push({
                     'id': module.generateId(),
                     'self': args[0],
@@ -642,6 +643,8 @@
                     for (var i = 0; i < parameters.length; ++i) {
                         var parameter = parameters[i];
                         this.env.data['param' + i] = parameter;
+                        var name = parameterNames[i];
+                        if (name) this.env.data[name] = parameter;
                     }
                 }
 
@@ -658,11 +661,38 @@
                 }
             },
 
+            parseTemplateDefAttribute: function (value) {
+
+                var result = {
+                    templateName: null,
+                    parameterNames: []
+                };
+
+                // split into template name and parameters
+                var parts = value.split(new RegExp("\\(([^\\)]+)\\)"));
+
+                // 1) template name
+                result.templateName = parts[0];
+
+                // 2) user template parameters
+                var parameters = parts[1];
+                if (!parameters) return result;
+
+                parameters = parameters.split(",");
+                for (var i = 0; i < parameters.length; i++) {
+                    var parameter = parameters[i];
+                    result.parameterNames.push(parameter.trim());
+                }
+
+                return result;
+            },
+
             processDefTemplate: function (node) {
                 if (!node.getAttribute || !node.getAttribute('data-def-template')) return false;
-                var transName = node.getAttribute('data-def-template');
+                var value = node.getAttribute('data-def-template');
                 node.removeAttribute('data-def-template');
-                module.transformations[transName] = module.parseTransformationFromTemplate(node, this.env);
+                var parseResult = this.parseTemplateDefAttribute(value);
+                module.transformations[parseResult.templateName] = module.parseTransformationFromTemplate(node, this.env, parseResult.parameterNames);
                 node.parentNode.removeChild(node);
                 return true;
             },
@@ -800,43 +830,60 @@
 
                 var self = this;
 
-                var determineStackIndex = function (path) {
-                    var index = self.env.stack.length - 1;
+                var moveUp = function (path) {
+                    var parentLevel = 0;
                     while (path.indexOf("../") === 0) {
-                        index--;
+                        parentLevel++;
                         path = path.slice(3);
                     }
                     return {
-                        index: index,
+                        parentLevel: parentLevel,
                         path: path
                     };
                 };
 
-                var splitPath = function (path) {
-                    return path.split(new RegExp("[\\./]"), 2);
-                };
 
-                var resolve = function (index, propertyName, path) {
+                var resolve = function (index, name, path) {
                     for (var i = index; i >= 0; --i) {
+
+                        // get property by name
                         var data = self.env.stack[i];
-                        var property = data[propertyName];
-                        if (!(property instanceof module.Property)) continue;
-                        property = property.resolve(path);
-                        if (property) return property;
+                        var property = data[name];
+                        if (!property) continue;
+
+                        // make property if not
+                        if (!(property instanceof module.Property))
+                            property = module.makeStaticProperty(property);
+
+                        // resolve path
+                        if (!path) {
+                            return property;
+                        } else {
+                            property = property.resolve(path);
+                            if (property) return property;
+                        }
                     }
+
                     return null;
                 };
 
-                var stackIndex = determineStackIndex(path);
-                var index = stackIndex.index;
-                path = stackIndex.path;
-                if (path === '') return resolve(index,'self','.');
+                // move up in the stack according to '../' path prefixes
+                var result = moveUp(path);
+                var stackIndex = self.env.stack.length - result.parentLevel - 1;
+                path = result.path;
 
-                var parts = splitPath(stackIndex.path);
-                if (parts.length === 1) parts[1] = '.';
-                var property = resolve(stackIndex.index, parts[0], parts[1]);
+                // check for self
+                if (path === '' || path === '.') return self.env.stack[stackIndex].self;
+
+                // split path into parameter and remaining path
+                var parts = path.split(new RegExp("[/]"), 2);
+
+                // resolve
+                var property = resolve(stackIndex, parts[0], parts[1]);
                 if (property) return property;
-                return resolve(stackIndex.index, 'self', stackIndex.path);
+                property = resolve(stackIndex, 'self', path);
+                if (property) return property;
+                throw 'Cannot resolve property:'+path;
 
             },
 

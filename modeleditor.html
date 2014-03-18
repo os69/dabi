@@ -14,6 +14,57 @@
 
     <div id="templates">
 
+        <div data-def-template="dropdown(entries,metadata)">
+
+            <select id="dropdown" data-bind="entries">
+                <option>
+                    <script>
+                        dobi.script(function(info) {
+                            
+                            var metadata = info.resolve('metadata').value();
+                            
+                            var selectedEntryProperty = info.resolve('../');
+                            var selectedValue = selectedEntryProperty.resolve(metadata.valuePath).value();
+                            
+                            var entryProperty = info.resolve('.');
+                            var value = entryProperty.resolve(metadata.valuePath).value();
+                            var description = entryProperty.resolve(metadata.descriptionPath).value();
+                            
+                            info.parentNode.setAttribute('value', value);
+                            info.parentNode.textContent = description;
+                            
+                            if (selectedEntryProperty.value() === entryProperty.value())
+                                info.parentNode.setAttribute('selected', 'selected');
+                            else
+                                info.parentNode.removeAttribute('selected');
+                            
+                        });
+                    </script>
+                </option>
+            </select>
+
+            <script>
+                dobi.script(function(info) {
+
+                    var metadata = info.resolve('metadata').value();
+                    var dropdown = info.getElementById('dropdown');
+                    var entriesProperty = info.resolve('entries');
+                    var selectedEntryProperty = info.resolve('.');
+
+                    dropdown.addEventListener('click', function() {
+                        for (var i = 0; i < entriesProperty.value().length; ++i) {
+                            var entryProperty = entriesProperty.resolve("" + i);
+                            var value = entryProperty.resolve(metadata.valuePath).value();
+                            if (value === dropdown.value) {
+                                selectedEntryProperty.set(entryProperty.value());
+                            }
+                        }
+                    });
+
+                });
+            </script>
+
+        </div>
 
         <!-- model -->
         <div data-bind="editor/model">
@@ -49,53 +100,18 @@
 
         </div>
 
-        <!-- dimensions -->
-        <div data-def-template="dropdown">
-            <select id="dropdown" data-bind="param0">
-                <option value="{{name}}">
-                    {{description}}
-                    <script>
-                        dobi.script(function(info) {
-                            var selectedProperty = info.resolve('../self');
-                            dobi.bindAttributeToElementAttribute(selectedProperty, 'selected', info.parentNode, function(value) {
-                                if (info.resolve('self/name').value() === value.name)
-                                    return 'selected';
-                                else
-                                    return '$remove';
-                            });
-                        });
-                    </script>
-                </option>
-            </select>
-            <script>
-                dobi.script(function(info) {
-                    var list = info.resolve('param0').value();
-                    var dropdown = info.getElementById('dropdown');
-                    var selectedProperty = info.resolve('self');
-                    dropdown.addEventListener('click', function() {
-                        for (var i = 0; i < list.length; ++i) {
-                            var element = list[i];
-                            if (element.name === dropdown.value) {
-                                selectedProperty.set(element);
-                                break;
-                            }
-                        }
-                    });
-                });
-            </script>
-        </div>
-
 
         <div data-bind="editor/cube">
 
             <h1>Cube</h1>
 
             <h2>Dimensions</h2>
-            <div data-bind="currentDimension" data-template="dropdown" data-template-parameters="dimensionList"></div>
+            <div data-bind="currentDimension" data-template="dropdown" data-template-parameters="Dimensions,dimensionDropdown"></div>
+            <div data-bind="currentDimension" data-template="dropdown" data-template-parameters="Dimensions,dimensionDropdown"></div>
             <h2>Attributes</h2>
 
             <div data-bind="currentDimension">
-                <ul data-bind="dimension/Attributes">
+                <ul data-bind="Attributes">
                     <li data-bind="Name"></li>
                 </ul>
             </div>
@@ -103,6 +119,7 @@
         </div>
 
     </div>
+
     <div id="target"></div>
     <script src="modeleditor.js"></script>
 
