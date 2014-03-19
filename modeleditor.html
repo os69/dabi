@@ -20,24 +20,24 @@
                 <option>
                     <script>
                         dobi.script(function(info) {
-                            
+
                             var metadata = info.resolve('metadata').value();
-                            
+
                             var selectedEntryProperty = info.resolve('../');
                             var selectedValue = selectedEntryProperty.resolve(metadata.valuePath).value();
-                            
+
                             var entryProperty = info.resolve('.');
                             var value = entryProperty.resolve(metadata.valuePath).value();
                             var description = entryProperty.resolve(metadata.descriptionPath).value();
-                            
+
                             info.parentNode.setAttribute('value', value);
                             info.parentNode.textContent = description;
-                            
+
                             if (selectedEntryProperty.value() === entryProperty.value())
                                 info.parentNode.setAttribute('selected', 'selected');
                             else
                                 info.parentNode.removeAttribute('selected');
-                            
+
                         });
                     </script>
                 </option>
@@ -66,63 +66,142 @@
 
         </div>
 
+
         <!-- model -->
-        <div data-bind="editor/model">
 
-            <ul data-bind="Dimensions/0/Attributes">
-                <li>
-                    <span data-bind="Id"></span>
-                    <span data-bind="Name"></span>
-                    <input type="checkbox" data-bind="AccessUsage.FreestyleSearch">
-                    <ul data-bind="dict:PresentationUsage">
-                        <li>
-                            <input data-bind="key">
-                            <input data-bind="value">
-                        </li>
-                    </ul>
-                </li>
-            </ul>
+        <h1>Model</h1>
+        <div data-bind="modelEditor/model">
 
-            <ul data-bind="Dimensions[0].Attributes">
-                <li>
-                    <span data-bind="Id"></span>
-                    <span data-bind="Name"></span>
-                    <input type="checkbox" data-bind="AccessUsage.FreestyleSearch">
-                    <ul data-bind="dict:PresentationUsage">
-                        <li>
-                            <input data-bind="key">
-                            <input data-bind="value">
-                            <button id="delpu">del</button>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
+
+            <h2>DataSource</h2>
+            <div data-bind="DataSource">
+                <div>
+                    <span>ObjectName:</span>
+                    <input data-bind="ObjectName">
+                </div>
+                <div>
+                    <span>PackageName:</span>
+                    <input data-bind="PackageName">
+                </div>
+                <div>
+                    <span>Type:</span>
+                    <input data-bind="Type">
+                </div>
+            </div>
+
+            <button id="LoadModel">Load</button>
+            <script>
+                dobi.script(function(info) {
+                    info.getElementById('LoadModel').addEventListener('click', function() {
+                        repository.getModel('test', function(model) {
+                            modelEditor.setDimension(model.Dimensions[0]);
+                            modelEditor.setModel(model);
+                        });
+                    });
+                });
+            </script>
+            <div>
+                <span>Description:</span>
+                <input data-bind="Description">
+            </div>
+
+            <h1>Dimension</h1>
+
+
+            <div data-bind="modelEditor/dimension" data-template="dropdown" data-template-parameters="Dimensions,dimensionDropdown"></div>
+
+            <div data-bind="modelEditor/dimension">
+                <ul data-bind="Attributes">
+                    <li>
+                        Id:
+                        <input data-bind="Id">Name:
+                        <input data-bind="Name">Freestyle:
+                        <input type="checkbox" data-bind="AccessUsage/FreestyleSearch">
+                        <br>PresentationUsage:
+                        <ul data-bind="dict:PresentationUsage">
+                            <li>
+                                <input data-bind="key">
+                                <input data-bind="value">
+                                <button id="DelPresentationUsage">Del</button>
+                                <script>
+                                    dobi.script(function(info) {
+                                        info.getElementById('DelPresentationUsage').addEventListener('click', function() {
+                                            var key = info.resolve('key').value();
+                                            var attribute = info.resolve('../').value();
+                                            attribute.PresentationUsage.dictDel(key);
+                                        });
+                                    });
+                                </script>
+                            </li>
+                        </ul>
+                        <button id="AddPresentationUsage">Add</button>
+                        <script>
+                            dobi.script(function(info) {
+                                info.getElementById('AddPresentationUsage').addEventListener('click', function() {
+                                    var attribute = info.resolve('.').value();
+                                    attribute.PresentationUsage.dictSet('name', 'value');
+                                });
+                            });
+                        </script>
+                    </li>
+                </ul>
+            </div>
 
         </div>
 
 
-        <div data-bind="editor/cube">
+        <!-- cube -->
+        <h1>Cube</h1>
+        <div data-bind="cubeEditor/cube">
 
-            <h1>Cube</h1>
-
-            <h2>Dimensions</h2>
-            <div data-bind="currentDimension" data-template="dropdown" data-template-parameters="Dimensions,dimensionDropdown"></div>
-            <div data-bind="currentDimension" data-template="dropdown" data-template-parameters="Dimensions,dimensionDropdown"></div>
-            <h2>Attributes</h2>
-
-            <div data-bind="currentDimension">
-                <ul data-bind="Attributes">
-                    <li data-bind="Name"></li>
-                </ul>
+            <h2>DataSource</h2>
+            <div data-bind="DataSource">
+                <div>
+                    <span>ObjectName:</span>
+                    <input data-bind="ObjectName">
+                </div>
+                <div>
+                    <span>PackageName:</span>
+                    <input data-bind="PackageName">
+                </div>
+                <div>
+                    <span>Type:</span>
+                    <input data-bind="Type">
+                </div>
             </div>
 
+            <button id="LoadCube">Load</button>
+            <script>
+                dobi.script(function(info) {
+                    info.getElementById('LoadCube').addEventListener('click', function() {
+                        repository.getCube('test', function(cube) {
+                            cubeEditor.setDimension(cube.Dimensions[0]);
+                            cubeEditor.setCube(cube);
+                        });
+                    });
+                });
+            </script>
+
+            <h1>Dimension</h1>
+
+            <div data-bind="cubeEditor/dimension" data-template="dropdown" data-template-parameters="Dimensions,dimensionDropdown"></div>
+            
+            <div data-bind="cubeEditor/dimension">
+                <ul data-bind="Attributes">
+                    <li>
+                        <input type="checkbox" data-bind="selected">
+                        <span data-bind="Name"></span>
+                    </li>
+                </ul>
+                
+            </div>
+            
         </div>
 
     </div>
 
     <div id="target"></div>
     <script src="modeleditor.js"></script>
-
 
 </body>
 

@@ -146,10 +146,10 @@
 
                 if (Object.prototype.toString.call(obj) === '[object Array]') {
                     var listIndex = parseInt(part);
-                    if (!obj[listIndex]) return null;
+                    if (obj[listIndex]===undefined) return null;
                     newProperty = module.makeListItemProperty(obj[listIndex], obj, this);
                 } else {
-                    if (!obj[part]) return null;
+                    if (obj[part]===undefined) return null;
                     newProperty = module.makeProperty(obj, part, this);
                 }
 
@@ -479,11 +479,14 @@
         // ===================================================================
         // connect template script function to script-dom-element (called during pageload)
         // ===================================================================        
-        module.script = function (script, delayed) {
+        module.script = function (script) {            
             var scriptTags = document.getElementsByTagName('SCRIPT');
             var scriptTag = scriptTags.item(scriptTags.length - 1);
             scriptTag.templateScript = script;
+/*            if(module.scriptInfo)
+                script(module.scriptInfo);*/
         };
+        
 
         // ===================================================================
         // environment
@@ -507,79 +510,7 @@
                 var env = new module.Environment();
                 env.stack = this.stack.slice(0);
                 return env;
-            },
-
-            /*    determineStackIndex: function (path) {
-                var index = this.stack.length - 1;
-                while (path.indexOf("../") === 0) {
-                    index--;
-                    path = path.slice(3);
-                }
-                return {
-                    index: index,
-                    path: path
-                };
-            },
-
-            get: function (path) {
-                var stackIndex = this.determineStackIndex(path);
-                var data = this.stack[stackIndex.index];
-                var value = data[stackIndex.path];
-                return value;
             }
-
-                        set: function (path, value) {
-                return this.resolve(path).set(value);
-            },
-
-            get: function (path) {
-                return this.resolve(path).get();
-            },
-
-            value: function (path, value) {
-                if (arguments.length === 1)
-                    return this.get(path);
-                else
-                    return this.set(path, value);
-            },
-
-            resolve: function (path) {
-
-                // split
-                var splitted = this.splitParameter(path);
-                var parameter = splitted.parameter;
-                path = splitted.path;
-
-                // resolve
-                for (var i = this.stack.length - 1; i >= 0; --i) {
-                    var data = this.stack[i];
-                    var result = data[parameter].resolve(path);
-                    if (result) return result;
-                }
-
-                return null;
-            },
-
-            splitParameter: function (path) {
-                if (path[0] !== '$') {
-                    return {
-                        parameter: 'self',
-                        path: path
-                    };
-                } else {
-                    var parts = path.split(new RegExp("[:]", "g"));
-                    if (parts.length === 1)
-                        return {
-                            parameter: parts[0].slice(1),
-                            path: '.'
-                        };
-                    else
-                        return {
-                            parameter: parts[0].slice(1),
-                            path: path.slice(parts[0].length + 1)
-                        };
-                }
-            }*/
 
         };
 
@@ -756,7 +687,10 @@
                         return self.resolveBinding(path);
                     }
                 };
-                node.templateScript.apply(node, [info]);
+                //module.scriptInfo = info;
+               // eval(node.textContent);
+                //module.scriptInfo = null;
+                node.templateScript.apply(node, [info]);                
                 return true;
             },
 
@@ -781,8 +715,10 @@
                     return;
                 }
 
+                if(!binding.property) return;
+                
                 var trans = this.getTransformation(node);
-
+                
                 switch (binding.type) {
                 case 'list':
                     module.bindList(binding.property, cloneNode, trans);
@@ -815,7 +751,8 @@
 
                 if (parts.length === 1) {
                     binding.property = this.resolveBinding(parts[0]);
-                    binding.type = module.getType(binding.property.value());
+                    if (binding.property)
+                        binding.type = module.getType(binding.property.value());
                     binding.path = bind;
                 } else {
                     binding.property = this.resolveBinding(parts[1]);
@@ -882,9 +819,7 @@
                 var property = resolve(stackIndex, parts[0], parts[1]);
                 if (property) return property;
                 property = resolve(stackIndex, 'self', path);
-                if (property) return property;
-                throw 'Cannot resolve property:'+path;
-
+                return property;
             },
 
             getTransformation: function (node) {

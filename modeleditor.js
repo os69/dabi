@@ -4,7 +4,7 @@
 
 
     // =======================================================================
-    // repository load & save
+    // load sve template
     // =======================================================================
 
     var getMetaData = function () {
@@ -43,7 +43,11 @@
 
     };
 
-    var repository = {
+    // =======================================================================
+    // repository load & save
+    // =======================================================================
+
+    global.repository = {
 
         getModel: function (name, cb) {
 
@@ -54,14 +58,27 @@
                 data = JSON.parse(data);
                 cb(data.Model);
             });
+
         },
 
-        getView: function (name, cb) {
+        enhanceCube: function (cube) {
+            for (var i = 0; i < cube.Dimensions.length; ++i) {
+                var dimension = cube.Dimensions[i];
+                for (var j = 0; j < dimension.Attributes.length; ++j) {
+                    var attribute = dimension.Attributes[j];
+                    attribute.selected = false;
+                }
+            }
+        },
+
+        getCube: function (name, cb) {
+            var self = this;
             $.ajax({
                 url: 'data1.js',
                 dataType: 'text'
             }).done(function (data) {
                 data = JSON.parse(data);
+                self.enhanceCube(data.Cube);
                 cb(data.Cube);
             });
 
@@ -70,26 +87,51 @@
     };
 
     // =======================================================================
-    // main
+    // model editor
+    // =======================================================================    
+    global.modelEditor = {};
+    var modelEditor = global.modelEditor;
+    modelEditor.model = {
+        "DataSource": {
+            "ObjectName": "LIQUID_SALES_AV1",
+            "PackageName": "liquid-sqe",
+            "Type": "View"
+        }
+    };
+    modelEditor.dimension = {};
+
+    global.dimensionDropdown = {
+        valuePath: 'Name',
+        descriptionPath: 'Name'
+    };
+
+
+
     // =======================================================================
+    // cube editor
+    // =======================================================================
+    global.cubeEditor = {};
+    var cubeEditor = global.cubeEditor;
+    cubeEditor.cube = {
+        "DataSource": {
+            "InstanceId": "53215CD9D8817C7BE10000007F000002",
+            "ObjectName": "LIQUID_SALES_AV1",
+            "PackageName": "liquid-sqe",
+            "SchemaName": "_SYS_BIC",
+            "Type": "View"
+        }
+    };
+    cubeEditor.dimension = {};
 
-    repository.getModel('test', function (model) {
-        repository.getView('test', function (cube) {
+    global.cubeDimensionDropdown = {
+        valuePath: 'Name',
+        descriptionPath: 'Name'
+    };
 
-            var editor = window.editor = {};
-            editor.model = model;
-            editor.cube = cube;
-             
-            cube.currentDimension = cube.Dimensions[2];
-            cube.dimensionDropdown = {
-                valuePath : 'Name',
-                descriptionPath : 'Name'
-            };
-            
-            dobi.bindObject(window, document.getElementById('target'), dobi.parseTransformationFromTemplate(document.getElementById('templates')));
-            document.getElementById('templates').parentNode.removeChild(document.getElementById('templates'));
-
-        });
-    });
+    // =======================================================================
+    // bind
+    // =======================================================================
+    dobi.bindObject(global, document.getElementById('target'), dobi.parseTransformationFromTemplate(document.getElementById('templates')));
+    document.getElementById('templates').parentNode.removeChild(document.getElementById('templates'));
 
 })(window, window.$, window.dobi);
