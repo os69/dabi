@@ -6,106 +6,75 @@
     <script src="../lib/jquery-1.7.2.min.js" type="text/javascript"></script>
     <script src="eventing.js"></script>
     <script src="dobi.js"></script>
-
-    <title>Binding Declarative Approach</title>
+    <title>Model Editor</title>
 </head>
 
 <body>
 
     <div id="templates">
 
-        <div data-def-template="dropdown(entries,metadata)">
+        <!-- ================================================================= -->
+        <!-- template library -->
+        <!-- ================================================================= -->
+        <script>
+            dobi.loadHtml("templates.html");
+        </script>
 
-            <select id="dropdown" data-bind="entries">
-                <option>
-                    <script>
-                        dobi.script(function(info) {
-
-                            var metadata = info.resolve('metadata').value();
-
-                            var selectedEntryProperty = info.resolve('../');
-                            var selectedValue = selectedEntryProperty.resolve(metadata.valuePath).value();
-
-                            var entryProperty = info.resolve('.');
-                            var value = entryProperty.resolve(metadata.valuePath).value();
-                            var description = entryProperty.resolve(metadata.descriptionPath).value();
-
-                            info.parentNode.setAttribute('value', value);
-                            info.parentNode.textContent = description;
-
-                            if (selectedEntryProperty.value() === entryProperty.value())
-                                info.parentNode.setAttribute('selected', 'selected');
-                            else
-                                info.parentNode.removeAttribute('selected');
-
-                        });
-                    </script>
-                </option>
-            </select>
-
-            <script>
-                dobi.script(function(info) {
-
-                    var metadata = info.resolve('metadata').value();
-                    var dropdown = info.getElementById('dropdown');
-                    var entriesProperty = info.resolve('entries');
-                    var selectedEntryProperty = info.resolve('.');
-
-                    dropdown.addEventListener('click', function() {
-                        for (var i = 0; i < entriesProperty.value().length; ++i) {
-                            var entryProperty = entriesProperty.resolve("" + i);
-                            var value = entryProperty.resolve(metadata.valuePath).value();
-                            if (value === dropdown.value) {
-                                selectedEntryProperty.set(entryProperty.value());
-                            }
-                        }
-                    });
-
-                });
-            </script>
-
+        <!-- ================================================================= -->
+        <!-- data source -->
+        <!-- ================================================================= -->        
+        <div data-def-template="datasource">
+            <div>
+                <span>ObjectName:</span>
+                <input data-bind="ObjectName">
+            </div>
+            <div>
+                <span>PackageName:</span>
+                <input data-bind="PackageName">
+            </div>
+            <div>
+                <span>Type:</span>
+                <input data-bind="Type">
+            </div>
         </div>
 
-
+        <!-- ================================================================= -->
         <!-- model -->
-
+        <!-- ================================================================= -->
         <h1>Model</h1>
+
+        <h2>DataSource</h2>
+        
+        <div data-bind="modelEditor/DataSource" data-template="datasource"></div>
+    
+        <button id="LoadModel">Load</button>
+        <button id="SaveModel">Save</button>
+        <script>
+            dobi.script(function(info) {
+                info.getElementById('LoadModel').addEventListener('click', function() {
+                    repository.getModel(modelEditor.DataSource, function(model) {
+                        modelEditor.setDimension(model.Dimensions[0]);
+                        modelEditor.setModel(model);
+                    });
+                });
+                info.getElementById('SaveModel').addEventListener('click', function() {
+                    repository.saveModel(modelEditor.DataSource, modelEditor.model);
+                });
+            });
+        </script>
+
         <div data-bind="modelEditor/model">
 
 
-            <h2>DataSource</h2>
-            <div data-bind="DataSource">
-                <div>
-                    <span>ObjectName:</span>
-                    <input data-bind="ObjectName">
-                </div>
-                <div>
-                    <span>PackageName:</span>
-                    <input data-bind="PackageName">
-                </div>
-                <div>
-                    <span>Type:</span>
-                    <input data-bind="Type">
-                </div>
-            </div>
-
-            <button id="LoadModel">Load</button>
-            <script>
-                dobi.script(function(info) {
-                    info.getElementById('LoadModel').addEventListener('click', function() {
-                        repository.getModel('test', function(model) {
-                            modelEditor.setDimension(model.Dimensions[0]);
-                            modelEditor.setModel(model);
-                        });
-                    });
-                });
-            </script>
+            <h2>Referenced DataSource</h2>
+            <div data-bind="DataSource" data-template="datasource"></div>
+            
             <div>
                 <span>Description:</span>
                 <input data-bind="Description">
             </div>
 
-            <h1>Dimension</h1>
+            <h2>Dimension</h2>
 
 
             <div data-bind="modelEditor/dimension" data-template="dropdown" data-template-parameters="Dimensions,dimensionDropdown"></div>
@@ -149,32 +118,20 @@
 
         </div>
 
-
+        <!-- ================================================================= -->
         <!-- cube -->
+        <!-- ================================================================= -->
         <h1>Cube</h1>
         <div data-bind="cubeEditor/cube">
 
             <h2>DataSource</h2>
-            <div data-bind="DataSource">
-                <div>
-                    <span>ObjectName:</span>
-                    <input data-bind="ObjectName">
-                </div>
-                <div>
-                    <span>PackageName:</span>
-                    <input data-bind="PackageName">
-                </div>
-                <div>
-                    <span>Type:</span>
-                    <input data-bind="Type">
-                </div>
-            </div>
+            <div data-bind="DataSource" data-template="datasource"></div>
 
             <button id="LoadCube">Load</button>
             <script>
                 dobi.script(function(info) {
                     info.getElementById('LoadCube').addEventListener('click', function() {
-                        repository.getCube('test', function(cube) {
+                        repository.getCube(cubeEditor.cube.DataSource, function(cube) {
                             cubeEditor.setDimension(cube.Dimensions[0]);
                             cubeEditor.setCube(cube);
                         });
@@ -182,20 +139,25 @@
                 });
             </script>
 
+
+
             <h1>Dimension</h1>
 
-            <div data-bind="cubeEditor/dimension" data-template="dropdown" data-template-parameters="Dimensions,dimensionDropdown"></div>
-            
+
             <div data-bind="cubeEditor/dimension">
+
+                <div data-bind="." data-template="dropdown" data-template-parameters="Dimensions,dimensionDropdown">
+                </div>
+
                 <ul data-bind="Attributes">
                     <li>
                         <input type="checkbox" data-bind="selected">
                         <span data-bind="Name"></span>
                     </li>
                 </ul>
-                
+
             </div>
-            
+
         </div>
 
     </div>

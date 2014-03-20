@@ -44,12 +44,12 @@
     };
 
     // =======================================================================
-    // repository load & save
+    // test repository (load, save models)
     // =======================================================================
 
-    global.repository = {
+    global.testRepository = {
 
-        getModel: function (name, cb) {
+        getModel: function (datasource, cb) {
 
             $.ajax({
                 url: 'data2.js',
@@ -59,6 +59,34 @@
                 cb(data.Model);
             });
 
+        },
+
+        getCube: function (datasource, cb) {
+            var self = this;
+            $.ajax({
+                url: 'data1.js',
+                dataType: 'text'
+            }).done(function (data) {
+                data = JSON.parse(data);
+                global.realRepository.enhanceCube.apply(self,[data.Cube]);
+                cb(data.Cube);
+            });
+
+        }
+
+    };
+
+    // =======================================================================
+    // real repository (load & save models)
+    // =======================================================================
+
+    global.realRepository = {
+
+        stringify: function (obj) {
+            return JSON.stringify(obj, function (key, value) {
+                if (key === '__eventing__') return undefined;
+                return value;
+            });
         },
 
         enhanceCube: function (cube) {
@@ -71,13 +99,58 @@
             }
         },
 
-        getCube: function (name, cb) {
-            var self = this;
-            $.ajax({
-                url: 'data1.js',
-                dataType: 'text'
+        getModel: function (datasource, cb) {
+
+            var params = {
+                "ModelPersistence": {
+                    "DataSource": datasource,
+                    "Action": "Get"
+                }
+            };
+
+            $.get('/sap/bc/ina/service/v2/GetResponse', {
+                "Request": this.stringify(params)
             }).done(function (data) {
-                data = JSON.parse(data);
+                cb(data.Model);
+            });
+
+        },
+
+        saveModel: function (datasource, model) {
+
+            var params = {
+                "ModelPersistence": {
+                    "DataSource": datasource,
+                    "Action": "Create",
+                    "Model": model
+                }
+            };
+
+            $.get('/sap/bc/ina/service/v2/GetResponse', {
+                "Request": this.stringify(params)
+            }).done(function () {
+                alert('ok');
+            });
+
+        },
+
+        getCube: function (datasource, cb) {
+
+            var self = this;
+            
+            var params = {
+                "DataSource": datasource,
+                "Metadata": {
+                    "Context": "Search",
+                    "Expand": ["Cube"]
+                },
+                "Options": ["SynchronousRun"],
+                "ServiceVersion": 204
+            };
+
+            $.get('/sap/bc/ina/service/v2/GetResponse', {
+                "Request": this.stringify(params)
+            }).done(function (data) {
                 self.enhanceCube(data.Cube);
                 cb(data.Cube);
             });
@@ -86,26 +159,26 @@
 
     };
 
+    global.repository = global.realRepository;
+
     // =======================================================================
     // model editor
     // =======================================================================    
-    global.modelEditor = {};
-    var modelEditor = global.modelEditor;
-    modelEditor.model = {
-        "DataSource": {
-            "ObjectName": "LIQUID_SALES_AV1",
-            "PackageName": "liquid-sqe",
-            "Type": "View"
-        }
+    var modelEditor = global.modelEditor = {};
+
+    modelEditor.DataSource = {
+        "ObjectName": "INAM_LIQUID_SALES_OLI",
+        "PackageName": "bics.basic",
+        "Type": "InaSearch"
     };
+
+    modelEditor.model = {};
     modelEditor.dimension = {};
 
     global.dimensionDropdown = {
         valuePath: 'Name',
         descriptionPath: 'Name'
     };
-
-
 
     // =======================================================================
     // cube editor
@@ -114,10 +187,8 @@
     var cubeEditor = global.cubeEditor;
     cubeEditor.cube = {
         "DataSource": {
-            "InstanceId": "53215CD9D8817C7BE10000007F000002",
-            "ObjectName": "LIQUID_SALES_AV1",
             "PackageName": "liquid-sqe",
-            "SchemaName": "_SYS_BIC",
+            "ObjectName": "LIQUID_SALES_AV1",
             "Type": "View"
         }
     };
@@ -131,7 +202,6 @@
     // =======================================================================
     // bind
     // =======================================================================
-    dobi.bindObject(global, document.getElementById('target'), dobi.parseTransformationFromTemplate(document.getElementById('templates')));
-    document.getElementById('templates').parentNode.removeChild(document.getElementById('templates'));
+    dobi.run(window, document.getElementById('templates'), document.getElementById('target'));
 
 })(window, window.$, window.dobi);

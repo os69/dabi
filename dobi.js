@@ -2,6 +2,7 @@
 /*global document */
 /*global setTimeout */
 /*global Node */
+/*global XMLHttpRequest*/
 
 /* sub */
 /* remove connect */
@@ -15,6 +16,26 @@
     define(["eventing"], function (eventing) {
 
         var module = {};
+
+        // ===================================================================
+        // start template processor
+        // ===================================================================
+        module.run = function (rootScope, templateNode, targetNode) {
+            module.bindObject(rootScope, targetNode, module.parseTransformationFromTemplate(templateNode));
+            templateNode.parentNode.removeChild(templateNode);
+        };
+
+        // ===================================================================
+        // load html
+        // ===================================================================
+        module.loadHtml = function (path) {
+            var request = new XMLHttpRequest();
+            request.open('GET', path, false);
+            request.send(null);
+            if (request.status !== 200)
+                throw "HTTP GET failed:" + path;
+            document.write(request.responseText);
+        };
 
         // ===================================================================
         // get setter name from property name
@@ -146,10 +167,10 @@
 
                 if (Object.prototype.toString.call(obj) === '[object Array]') {
                     var listIndex = parseInt(part);
-                    if (obj[listIndex]===undefined) return null;
+                    if (obj[listIndex] === undefined) return null;
                     newProperty = module.makeListItemProperty(obj[listIndex], obj, this);
                 } else {
-                    if (obj[part]===undefined) return null;
+                    if (obj[part] === undefined) return null;
                     newProperty = module.makeProperty(obj, part, this);
                 }
 
@@ -479,14 +500,14 @@
         // ===================================================================
         // connect template script function to script-dom-element (called during pageload)
         // ===================================================================        
-        module.script = function (script) {            
+        module.script = function (script) {
             var scriptTags = document.getElementsByTagName('SCRIPT');
             var scriptTag = scriptTags.item(scriptTags.length - 1);
             scriptTag.templateScript = script;
-/*            if(module.scriptInfo)
+            /*            if(module.scriptInfo)
                 script(module.scriptInfo);*/
         };
-        
+
 
         // ===================================================================
         // environment
@@ -688,9 +709,9 @@
                     }
                 };
                 //module.scriptInfo = info;
-               // eval(node.textContent);
+                // eval(node.textContent);
                 //module.scriptInfo = null;
-                node.templateScript.apply(node, [info]);                
+                node.templateScript.apply(node, [info]);
                 return true;
             },
 
@@ -715,10 +736,10 @@
                     return;
                 }
 
-                if(!binding.property) return;
-                
+                if (!binding.property) return;
+
                 var trans = this.getTransformation(node);
-                
+
                 switch (binding.type) {
                 case 'list':
                     module.bindList(binding.property, cloneNode, trans);
