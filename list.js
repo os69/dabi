@@ -1,14 +1,14 @@
-(function () {
+/* global window*/
+/* global console*/
 
+(function () {
+    "use strict";
+    
     var define = window.define || function (deps, mod) {
             window.list = mod();
         };
 
     define([], function () {
-        "use strict";
-
-        var $ = window.$;
-        var console = window.console;
 
         var deltaSet = function (list1, list2, comparator, update) {
 
@@ -124,6 +124,15 @@
 
         };
 
+        var createMap = function(list,keyFunction){
+            var result = {};
+            for(var i=0;i<list.length;++i){
+                var element= list[i];
+                result[keyFunction(element)]= element;
+            }
+            return result;
+        };
+        
         // =========================================================================
         //  main
         // =========================================================================
@@ -131,7 +140,8 @@
         //tests();
 
         return {
-            deltaSet: deltaSet
+            deltaSet: deltaSet,
+            createMap : createMap
         };
 
     });

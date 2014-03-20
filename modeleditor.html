@@ -4,6 +4,7 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
     <script src="../lib/jquery-1.7.2.min.js" type="text/javascript"></script>
+    <script src="list.js"></script>
     <script src="eventing.js"></script>
     <script src="dobi.js"></script>
     <title>Model Editor</title>
@@ -22,7 +23,7 @@
 
         <!-- ================================================================= -->
         <!-- data source -->
-        <!-- ================================================================= -->        
+        <!-- ================================================================= -->
         <div data-def-template="datasource">
             <div>
                 <span>ObjectName:</span>
@@ -44,9 +45,9 @@
         <h1>Model</h1>
 
         <h2>DataSource</h2>
-        
+
         <div data-bind="modelEditor/DataSource" data-template="datasource"></div>
-    
+
         <button id="LoadModel">Load</button>
         <button id="SaveModel">Save</button>
         <script>
@@ -68,7 +69,7 @@
 
             <h2>Referenced DataSource</h2>
             <div data-bind="DataSource" data-template="datasource"></div>
-            
+
             <div>
                 <span>Description:</span>
                 <input data-bind="Description">
@@ -104,12 +105,20 @@
                             </li>
                         </ul>
                         <button id="AddPresentationUsage">Add</button>
+                        <button id="DelAttribute">Del</button>
                         <script>
                             dobi.script(function(info) {
                                 info.getElementById('AddPresentationUsage').addEventListener('click', function() {
                                     var attribute = info.resolve('.').value();
                                     attribute.PresentationUsage.dictSet('name', 'value');
                                 });
+                                info.getElementById('DelAttribute').addEventListener('click', function() {
+                                    var attribute = info.value('.');
+                                    var attributes = info.value('../Attributes');
+                                    var index = attributes.indexOf(attribute);
+                                    if(index>=0) attributes.splice(index,1);                                    
+                                });
+
                             });
                         </script>
                     </li>
@@ -128,10 +137,17 @@
             <div data-bind="DataSource" data-template="datasource"></div>
 
             <button id="LoadCube">Load</button>
+            <button id="LoadCubeModel">Load View of Model</button>
             <script>
                 dobi.script(function(info) {
                     info.getElementById('LoadCube').addEventListener('click', function() {
                         repository.getCube(cubeEditor.cube.DataSource, function(cube) {
+                            cubeEditor.setDimension(cube.Dimensions[0]);
+                            cubeEditor.setCube(cube);
+                        });
+                    });
+                    info.getElementById('LoadCubeModel').addEventListener('click', function() {
+                        repository.getCube(modelEditor.model.DataSource, function(cube) {
                             cubeEditor.setDimension(cube.Dimensions[0]);
                             cubeEditor.setCube(cube);
                         });
@@ -141,8 +157,16 @@
 
 
 
-            <h1>Dimension</h1>
+            <h2>Dimension</h2>
 
+            <button id="CopyDimensions">Copy selected dimensions to model</button>
+            <script>
+                dobi.script(function(info) {
+                    info.getElementById('CopyDimensions').addEventListener('click', function() {
+                        modelEditor.copyDimensions();
+                    });
+                });
+            </script>
 
             <div data-bind="cubeEditor/dimension">
 

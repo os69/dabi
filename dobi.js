@@ -34,7 +34,7 @@
             request.send(null);
             if (request.status !== 200)
                 throw "HTTP GET failed:" + path;
-            document.write(request.responseText);
+            document.write(request.responseText); // jshint ignore:line
         };
 
         // ===================================================================
@@ -706,6 +706,9 @@
                     },
                     resolve: function (path) {
                         return self.resolveBinding(path);
+                    },
+                    value : function(path){
+                        return this.resolve(path).value();
                     }
                 };
                 //module.scriptInfo = info;

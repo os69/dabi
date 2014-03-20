@@ -1,6 +1,8 @@
 /* global window*/
 /* global document*/
-(function (global, $, dobi) {
+/* global alert*/
+
+(function (global, $, dobi, list) {
 
 
     // =======================================================================
@@ -68,7 +70,7 @@
                 dataType: 'text'
             }).done(function (data) {
                 data = JSON.parse(data);
-                global.realRepository.enhanceCube.apply(self,[data.Cube]);
+                global.realRepository.enhanceCube.apply(self, [data.Cube]);
                 cb(data.Cube);
             });
 
@@ -137,7 +139,7 @@
         getCube: function (datasource, cb) {
 
             var self = this;
-            
+
             var params = {
                 "DataSource": datasource,
                 "Metadata": {
@@ -159,7 +161,7 @@
 
     };
 
-    global.repository = global.realRepository;
+    global.repository = global.testRepository;
 
     // =======================================================================
     // model editor
@@ -174,6 +176,42 @@
 
     modelEditor.model = {};
     modelEditor.dimension = {};
+
+    modelEditor.transformAttribute = function (attribute) {
+        var resultAttribute = {};
+        resultAttribute.AccessUsage = {};
+        resultAttribute.AccessUsage.FreestyleSearch = attribute.IsFreestyle;
+        resultAttribute.Id = attribute.Name;
+        resultAttribute.Name = attribute.Description;
+        resultAttribute.PresentationUsage = {
+            "Summary": 1,
+            "Title": 1
+        };
+        return resultAttribute;
+    };
+
+    modelEditor.copyDimensions = function () {
+
+        // determine attributes for insertion
+        var attributes = [];
+        var attribute;
+        for (var i = 0; i < cubeEditor.dimension.Attributes.length; ++i) {
+            attribute = cubeEditor.dimension.Attributes[i];
+            if (!attribute.selected) continue;
+            attributes.push(this.transformAttribute(attribute));
+        }
+
+        // insert
+        var attributeMap = list.createMap(this.dimension.Attributes,function (attribute) {
+            return attribute.Id;
+        });
+        for(i=0;i<attributes.length;++i){
+            attribute= attributes[i];
+            if(attributeMap[attribute.Id]) continue;
+            this.dimension.Attributes.push(attribute);
+        }
+        
+    };
 
     global.dimensionDropdown = {
         valuePath: 'Name',
@@ -204,4 +242,4 @@
     // =======================================================================
     dobi.run(window, document.getElementById('templates'), document.getElementById('target'));
 
-})(window, window.$, window.dobi);
+})(window, window.$, window.dobi, window.list);
