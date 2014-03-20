@@ -707,7 +707,7 @@
                     resolve: function (path) {
                         return self.resolveBinding(path);
                     },
-                    value : function(path){
+                    value: function (path) {
                         return this.resolve(path).value();
                     }
                 };
@@ -832,6 +832,12 @@
                 var result = moveUp(path);
                 var stackIndex = self.env.stack.length - result.parentLevel - 1;
                 path = result.path;
+
+                // check for root
+                if (path[0] === '/') {
+                    stackIndex = 0;
+                    path = path.slice(1);
+                }
 
                 // check for self
                 if (path === '' || path === '.') return self.env.stack[stackIndex].self;

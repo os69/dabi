@@ -1,0 +1,18 @@
+input {
+    background-color: inherit;
+    border-width: 0;
+    border-style: none;
+}
+
+.PresentationUsageKey {
+    width:60px;
+}
+.PresentationUsageValue {
+    width:10px;
+}
+
+
+.PresentationUsage{
+    margin-left: : 10px;
+    display:inline-block;
+}
