@@ -1,0 +1,90 @@
+<h1>Model</h1>
+
+<h2>DataSource</h2>
+
+<div data-bind="/modelEditor/DataSource" data-template="datasource"></div>
+<br>
+<button id="LoadModel" type="button" class="btn btn-primary">Load</button>
+<button id="SaveModel" type="button" class="btn btn-primary">Save</button>
+<script>
+    dobi.script(function(info) {
+        info.getElementById('LoadModel').addEventListener('click', function() {
+            repository.getModel(modelEditor.DataSource, function(model) {
+                modelEditor.setDimension(model.Dimensions[0]);
+                modelEditor.setModel(model);
+            });
+        });
+        info.getElementById('SaveModel').addEventListener('click', function() {
+            repository.saveModel(modelEditor.DataSource, modelEditor.model);
+        });
+    });
+</script>
+
+<div data-bind="/modelEditor/model">
+
+    <h2>Referenced DataSource</h2>
+    <div data-bind="DataSource" data-template="datasource"></div>
+    <br>
+    <div class="input-group">
+        <span class="input-group-addon">Description</span>
+        <input type="text" data-bind="Description" class="form-control">
+    </div>
+
+
+    <h2>Attributes</h2>
+
+    <div class="input-group">
+        <span class="input-group-addon">Dimension</span>
+
+        <div data-bind="/modelEditor/dimension" data-template="dropdown" data-template-parameters="Dimensions,dimensionDropdown"></div>
+    </div>
+    <br>
+
+    <div data-bind="/modelEditor/dimension">
+        <div data-bind="Attributes">
+            <div class="attribute">
+                <span class="glyphicon glyphicon-remove"></span>
+                <br>
+                Id:
+                <input data-bind="Id">Name:
+                <input data-bind="Name">Freestyle:
+                <input type="checkbox" data-bind="AccessUsage/FreestyleSearch">
+                <br>PresentationUsage:
+                <div data-bind="dict:PresentationUsage">
+                    <span class="PresentationUsage label label-default">
+                        <input type="text" data-bind="key" tabindex=0 class="PresentationUsageKey">
+                        <input type="text" data-bind="value" tabindex=0 class="PresentationUsageValue">
+                        <!--  <button id="DelPresentationUsage">Del</button>
+                                <script>
+                                    dobi.script(function(info) {
+                                        info.getElementById('DelPresentationUsage').addEventListener('click', function() {
+                                            var key = info.resolve('key').value();
+                                            var attribute = info.resolve('../').value();
+                                            attribute.PresentationUsage.dictDel(key);
+                                        });
+                                    });
+                                </script>-->
+                    </span>
+                </div>
+                <button id="AddPresentationUsage">Add</button>
+                <button id="DelAttribute">Del</button>
+                <script>
+                    dobi.script(function(info) {
+                        info.getElementById('AddPresentationUsage').addEventListener('click', function() {
+                            var attribute = info.resolve('.').value();
+                            attribute.PresentationUsage.dictSet('name', 'value');
+                        });
+                        info.getElementById('DelAttribute').addEventListener('click', function() {
+                            var attribute = info.value('.');
+                            var attributes = info.value('../Attributes');
+                            var index = attributes.indexOf(attribute);
+                            if (index >= 0) attributes.splice(index, 1);
+                        });
+
+                    });
+                </script>                             
+            </div>
+        </div>
+    </div>
+
+</div>

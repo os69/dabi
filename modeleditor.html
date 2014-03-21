@@ -16,7 +16,6 @@
 
 <body>
 
-    <h1>Hello, world!</h1>
 
     <div id="templates">
 
@@ -31,163 +30,56 @@
         <!-- data source -->
         <!-- ================================================================= -->
         <div data-def-template="datasource">
-            <div>
-                <span>ObjectName:</span>
-                <input data-bind="ObjectName">
+
+            <div class="input-group">
+                <span class="input-group-addon">ObjectName</span>
+                <input type="text" data-bind="ObjectName" class="form-control">
             </div>
-            <div>
-                <span>PackageName:</span>
-                <input data-bind="PackageName">
+            <br>
+            <div class="input-group">
+                <span class="input-group-addon">PackageName</span>
+                <input type="text" data-bind="PackageName" class="form-control">
             </div>
-            <div>
-                <span>Type:</span>
-                <input data-bind="Type">
+            <br>
+            <div class="input-group">
+                <span class="input-group-addon">Type</span>
+                <input type="text" data-bind="Type" class="form-control">
             </div>
+
         </div>
 
         <!-- ================================================================= -->
         <!-- model -->
         <!-- ================================================================= -->
-        <h1>Model</h1>
+        <div class="row">
+            <div class="col-md-6">
 
-        <h2>DataSource</h2>
-
-        <div data-bind="/modelEditor/DataSource" data-template="datasource"></div>
-
-        <button id="LoadModel" type="button" class="btn btn-primary">Load</button>
-        <button id="SaveModel" type="button" class="btn btn-primary">Save</button>
         <script>
-            dobi.script(function(info) {
-                info.getElementById('LoadModel').addEventListener('click', function() {
-                    repository.getModel(modelEditor.DataSource, function(model) {
-                        modelEditor.setDimension(model.Dimensions[0]);
-                        modelEditor.setModel(model);
-                    });
-                });
-                info.getElementById('SaveModel').addEventListener('click', function() {
-                    repository.saveModel(modelEditor.DataSource, modelEditor.model);
-                });
-            });
+            dobi.loadHtml("model.html");
         </script>
 
-        <div data-bind="/modelEditor/model">
 
-
-            <h2>Referenced DataSource</h2>
-            <div data-bind="DataSource" data-template="datasource"></div>
-
-            <div>
-                <span>Description:</span>
-                <input data-bind="Description">
             </div>
 
-            <h2>Dimension</h2>
+            <!-- ================================================================= -->
+            <!-- cube -->
+            <!-- ================================================================= -->
+            <div class="col-md-6">
+        <script>
+            dobi.loadHtml("cube.html");
+        </script>
 
-            <div data-bind="/modelEditor/dimension" data-template="dropdown" data-template-parameters="Dimensions,dimensionDropdown"></div>
-
-            <div data-bind="/modelEditor/dimension">
-                <ul data-bind="Attributes">
-                    <li>
-                        Id:
-                        <input data-bind="Id">Name:
-                        <input data-bind="Name">Freestyle:
-                        <input type="checkbox" data-bind="AccessUsage/FreestyleSearch">
-                        <br>PresentationUsage:
-                        <div data-bind="dict:PresentationUsage">
-                            <span class="PresentationUsage label label-default">
-                                <input type="text" data-bind="key" class="PresentationUsageKey">
-                                <input type="text" data-bind="value" class="PresentationUsageValue">
-                              <!--  <button id="DelPresentationUsage">Del</button>
-                                <script>
-                                    dobi.script(function(info) {
-                                        info.getElementById('DelPresentationUsage').addEventListener('click', function() {
-                                            var key = info.resolve('key').value();
-                                            var attribute = info.resolve('../').value();
-                                            attribute.PresentationUsage.dictDel(key);
-                                        });
-                                    });
-                                </script>-->
-                            </span>
-                        </div>
-                        <button id="AddPresentationUsage">Add</button>
-                        <button id="DelAttribute">Del</button>
-                        <script>
-                            dobi.script(function(info) {
-                                info.getElementById('AddPresentationUsage').addEventListener('click', function() {
-                                    var attribute = info.resolve('.').value();
-                                    attribute.PresentationUsage.dictSet('name', 'value');
-                                });
-                                info.getElementById('DelAttribute').addEventListener('click', function() {
-                                    var attribute = info.value('.');
-                                    var attributes = info.value('../Attributes');
-                                    var index = attributes.indexOf(attribute);
-                                    if (index >= 0) attributes.splice(index, 1);
-                                });
-
-                            });
-                        </script>
-                    </li>
-                </ul>
             </div>
 
         </div>
-
-        <!-- ================================================================= -->
-        <!-- cube -->
-        <!-- ================================================================= -->
-        <h1>Cube</h1>
-        <div data-bind="cubeEditor/cube">
-
-            <h2>DataSource</h2>
-            <div data-bind="DataSource" data-template="datasource"></div>
-
-            <button id="LoadCube">Load</button>
-            <button id="LoadCubeModel">Load View of Model</button>
-            <script>
-                dobi.script(function(info) {
-                    info.getElementById('LoadCube').addEventListener('click', function() {
-                        repository.getCube(cubeEditor.cube.DataSource, function(cube) {
-                            cubeEditor.setDimension(cube.Dimensions[0]);
-                            cubeEditor.setCube(cube);
-                        });
-                    });
-                    info.getElementById('LoadCubeModel').addEventListener('click', function() {
-                        repository.getCube(modelEditor.model.DataSource, function(cube) {
-                            cubeEditor.setDimension(cube.Dimensions[0]);
-                            cubeEditor.setCube(cube);
-                        });
-                    });
-                });
-            </script>
-
-
-            <h2>Dimension</h2>
-
-            <button id="CopyDimensions">Copy selected dimensions to model</button>
-            <script>
-                dobi.script(function(info) {
-                    info.getElementById('CopyDimensions').addEventListener('click', function() {
-                        modelEditor.copyDimensions();
-                    });
-                });
-            </script>
-
-            <div data-bind="/cubeEditor/dimension" data-template="dropdown" data-template-parameters="/cubeEditor/cube/Dimensions,/dimensionDropdown"></div>
-
-            <div data-bind="/cubeEditor/dimension">
-                <ul data-bind="Attributes">
-                    <li>
-                        <input type="checkbox" data-bind="selected">
-                        <span data-bind="Name"></span>
-                    </li>
-                </ul>
-            </div>
-
-        </div>
-
     </div>
 
-    <div id="target"></div>
+    <div class="container">
+        <div id="target"></div>
+    </div>
+
+
+
     <script src="bootstrap/js/bootstrap.min.js"></script>
     <script src="modeleditor.js"></script>
 </body>

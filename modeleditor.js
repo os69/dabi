@@ -161,7 +161,7 @@
 
     };
 
-    global.repository = global.testRepository;
+    global.repository = global.realRepository;
 
     // =======================================================================
     // model editor

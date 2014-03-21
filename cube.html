@@ -1,0 +1,60 @@
+<h1>Cube</h1>
+<div data-bind="cubeEditor/cube">
+
+    <h2>DataSource</h2>
+    <div data-bind="DataSource" data-template="datasource"></div>
+    <br>
+    <button type="button" class="btn btn-primary" id="LoadCube">Load</button>
+    <button type="button" class="btn btn-primary" id="LoadCubeModel">Load View of Model</button>
+    <script>
+        dobi.script(function(info) {
+            info.getElementById('LoadCube').addEventListener('click', function() {
+                repository.getCube(cubeEditor.cube.DataSource, function(cube) {
+                    cubeEditor.setDimension(cube.Dimensions[0]);
+                    cubeEditor.setCube(cube);
+                });
+            });
+            info.getElementById('LoadCubeModel').addEventListener('click', function() {
+                repository.getCube(modelEditor.model.DataSource, function(cube) {
+                    cubeEditor.setDimension(cube.Dimensions[0]);
+                    cubeEditor.setCube(cube);
+                });
+            });
+        });
+    </script>
+
+
+    <h2>Attributes</h2>
+
+    <div class="input-group">
+        <span class="input-group-addon">Dimension</span>
+        <div data-bind="/cubeEditor/dimension" data-template="dropdown" data-template-parameters="/cubeEditor/cube/Dimensions,/dimensionDropdown"></div>
+
+    </div>
+
+
+
+    <br>
+
+    <div data-bind="/cubeEditor/dimension">
+        <ul data-bind="Attributes">
+            <li>
+                <input type="checkbox" data-bind="selected">
+                <span data-bind="Name"></span>
+            </li>
+        </ul>
+    </div>
+
+    <button type="button" class="btn btn-primary" id="CopyDimensions">
+        Copy selected dimensions to model
+    </button>
+    <script>
+        dobi.script(function(info) {
+            info.getElementById('CopyDimensions').addEventListener('click', function() {
+                modelEditor.copyDimensions();
+            });
+        });
+    </script>
+
+
+</div>
