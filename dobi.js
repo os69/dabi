@@ -315,7 +315,7 @@
         // ===================================================================        
         module.bindObject = function (property, node, trans, parameters) {
             property = module.wrapAsProperty(property);
-            trans(property, node, null, parameters);
+            if(property.value()!==null) trans(property, node, null, parameters);
             if (property.name && module.getType(property.value()) !== 'simple') property.subscribe(node, function () {
                 module.unbindChildren(node);
                 node.innerHTML = "";
@@ -584,7 +584,7 @@
                     this.env = new module.Environment();
 
                 this.env.push({
-                    'id': module.generateId(),
+                    'transId': module.generateId(),
                     'self': args[0],
                     'node': args[1],
                     'refNode': args[2]
@@ -702,7 +702,7 @@
                     parentNode: targetParentNode,
                     refNode: targetRefNode,
                     getElementById: function (id) {
-                        return document.getElementById(id + "#" + this.env.data.id);
+                        return document.getElementById(id + "#" + this.env.data.transId);
                     },
                     resolve: function (path) {
                         return self.resolveBinding(path);
@@ -726,7 +726,7 @@
 
                 var cloneNode = node.cloneNode(false);
                 if (cloneNode.hasAttribute && cloneNode.hasAttribute('id'))
-                    cloneNode.setAttribute('id', cloneNode.getAttribute('id') + '#' + this.env.data.id);
+                    cloneNode.setAttribute('id', cloneNode.getAttribute('id') + '#' + this.env.data.transId);
                 this.processElementAttributes(cloneNode);
                 if (targetRefNode)
                     targetParentNode.insertBefore(cloneNode, targetRefNode);
@@ -810,7 +810,7 @@
                         // get property by name
                         var data = self.env.stack[i];
                         var property = data[name];
-                        if (!property) continue;
+                        if (property===undefined) continue;
 
                         // make property if not
                         if (!(property instanceof module.Property))

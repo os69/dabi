@@ -6,46 +6,6 @@
 
 
     // =======================================================================
-    // load sve template
-    // =======================================================================
-
-    var getMetaData = function () {
-
-        var params = {
-            "DataSource": {
-                "PackageName": "liquid-sqe",
-                "ObjectName": "LIQUID_SALES_AV1",
-                "Type": "View"
-            },
-            "Metadata": {
-                "Context": "Search",
-                "Expand": ["Cube"]
-            },
-            "Options": ["SynchronousRun"],
-            "ServiceVersion": 204
-        };
-
-        params = {
-            "ModelPersistence": {
-                "DataSource": {
-                    "PackageName": "bics.basic",
-                    "ObjectName": "INAM_LIQUID_SALES_01",
-                    "Type": "InaSearch"
-                },
-                "Action": "Get"
-            }
-        };
-
-
-        $.get('/sap/bc/ina/service/v2/GetResponse', {
-            "Request": JSON.stringify(params)
-        }).done(function (data) {
-
-        });
-
-    };
-
-    // =======================================================================
     // test repository (load, save models)
     // =======================================================================
 
@@ -161,57 +121,7 @@
 
     };
 
-    global.repository = global.realRepository;
-
-    // =======================================================================
-    // model editor
-    // =======================================================================    
-    var modelEditor = global.modelEditor = {};
-
-    modelEditor.DataSource = {
-        "ObjectName": "INAM_LIQUID_SALES_OLI",
-        "PackageName": "bics.basic",
-        "Type": "InaSearch"
-    };
-
-    modelEditor.model = {};
-    modelEditor.dimension = {};
-
-    modelEditor.transformAttribute = function (attribute) {
-        var resultAttribute = {};
-        resultAttribute.AccessUsage = {};
-        resultAttribute.AccessUsage.FreestyleSearch = attribute.IsFreestyle;
-        resultAttribute.Id = attribute.Name;
-        resultAttribute.Name = attribute.Description;
-        resultAttribute.PresentationUsage = {
-            "Summary": 1,
-            "Title": 1
-        };
-        return resultAttribute;
-    };
-
-    modelEditor.copyDimensions = function () {
-
-        // determine attributes for insertion
-        var attributes = [];
-        var attribute;
-        for (var i = 0; i < cubeEditor.dimension.Attributes.length; ++i) {
-            attribute = cubeEditor.dimension.Attributes[i];
-            if (!attribute.selected) continue;
-            attributes.push(this.transformAttribute(attribute));
-        }
-
-        // insert
-        var attributeMap = list.createMap(this.dimension.Attributes,function (attribute) {
-            return attribute.Id;
-        });
-        for(i=0;i<attributes.length;++i){
-            attribute= attributes[i];
-            if(attributeMap[attribute.Id]) continue;
-            this.dimension.Attributes.push(attribute);
-        }
-        
-    };
+    global.repository = global.testRepository;
 
     global.dimensionDropdown = {
         valuePath: 'Name',
@@ -219,10 +129,73 @@
     };
 
     // =======================================================================
+    // model editor
+    // =======================================================================    
+    var modelEditor = global.modelEditor = {
+
+        DataSource: {
+            "ObjectName": "INAM_LIQUID_SALES_OLI",
+            "PackageName": "bics.basic",
+            "Type": "InaSearch"
+        },
+        
+        model: null,
+        
+        dimension: null,
+        
+        setModel: function (model) {
+            this.model = model;
+            this.setDimension(model.Dimensions[0]);
+        },
+        
+        setDimension: function (dimension) {
+            this.dimension = dimension;
+        },
+        
+        transformAttribute: function (attribute) {
+            var resultAttribute = {};
+            resultAttribute.AccessUsage = {};
+            resultAttribute.AccessUsage.FreestyleSearch = attribute.IsFreestyle;
+            resultAttribute.Id = attribute.Name;
+            resultAttribute.Name = attribute.Description;
+            resultAttribute.PresentationUsage = {
+                "Summary": 1,
+                "Title": 1
+            };
+            return resultAttribute;
+        },
+
+        copyDimensions: function () {
+
+            // determine attributes for insertion
+            var attributes = [];
+            var attribute;
+            for (var i = 0; i < cubeEditor.dimension.Attributes.length; ++i) {
+                attribute = cubeEditor.dimension.Attributes[i];
+                if (!attribute.selected) continue;
+                attributes.push(this.transformAttribute(attribute));
+            }
+
+            // insert
+            var attributeMap = list.createMap(this.dimension.Attributes, function (attribute) {
+                return attribute.Id;
+            });
+            for (i = 0; i < attributes.length; ++i) {
+                attribute = attributes[i];
+                if (attributeMap[attribute.Id]) continue;
+                this.dimension.Attributes.push(attribute);
+            }
+
+        }
+        
+    };
+
+    // =======================================================================
     // cube editor
     // =======================================================================
     global.cubeEditor = {};
     var cubeEditor = global.cubeEditor;
+    cubeEditor.dimension = null;
     cubeEditor.cube = {
         "DataSource": {
             "PackageName": "liquid-sqe",
@@ -230,12 +203,7 @@
             "Type": "View"
         }
     };
-    cubeEditor.dimension = {};
-
-    global.cubeDimensionDropdown = {
-        valuePath: 'Name',
-        descriptionPath: 'Name'
-    };
+    
 
     // =======================================================================
     // bind

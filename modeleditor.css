@@ -1,3 +1,10 @@
+body{
+    background-image: url(grey-honeycomb-pattern-wallpapers_29965_1920x1080.jpg)  ; 
+     background-size: cover;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+}
 input {
     background-color: inherit;
     border-width: 0;
@@ -7,7 +14,7 @@ input {
     width: 60px;
 }
 .PresentationUsageValue {
-    width: 10px;
+    width: 20px;
 }
 .PresentationUsage {
     margin-left: : 10px;
@@ -18,4 +25,28 @@ input {
     background-color: #eeeeee;
     margin-bottom: 10px;
     border-radius: 5px;
+}
+
+h1.panel-title{
+    font-size: 40px;
+}
+
+h1.maintitle{
+    font-size: 60px;
+}
+
+.DelAttribute:hover {
+    color: #3276b1;
+}
+
+.DelPresentationUsage:hover {
+    color: #3276b1;
+}
+
+.AddPresentationUsage:hover {
+    color: #3276b1;
+}
+
+.AddPresentationUsage{
+    font-size: 10px;
 }
