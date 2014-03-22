@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+    <script src="eventing.js"></script>
+    <script src="dobi.js"></script>
+    <title>Binding Declarative Approach</title>
+</head>
+
+<body>
+
+
+    <div id="templates">
+
+        <div data-bind="salesOrder">
+            <div data-bind="id"></div>
+        </div>
+        
+        <button id="start">Start</button>
+        <script>
+            dobi.script(function(info){
+                info.getElementById('start').addEventListener('click',function(){
+                    window.setSalesOrder(salesOrder2); 
+                });
+            });
+        </script>
+
+    </div>
+
+    <div id="target"></div>
+
+
+    <script>
+        salesOrder = null;
+        salesOrder2 = {
+            id: '4711',
+            status: {
+                code: '1',
+                description: 'One'
+            },
+            items: [{
+                pos: '10',
+                description: 'Position 10',
+                subitems: ['a', 'b', 'c']
+            }, {
+                pos: '20',
+                description: 'Position 20',
+                subitems: ['a', 'b', 'c']
+            }, {
+                pos: '30',
+                description: 'Position 30',
+                subitems: ['a', 'b', 'c']
+            }],
+            uigroups: {
+                'title': '1',
+                'description': '2'
+            }
+        };
+
+        dobi.bindObject(window, document.getElementById('target'), dobi.parseTransformationFromTemplate(document.getElementById('templates')));
+    </script>
+
+
+
+</body>
+
+</html>
