@@ -202,7 +202,7 @@ require(["eventing"], function (eventing) {
     testClasses();
     console.log("--methods");
     testMethods();
-    console.log("--weak");
-    testWeak();
+    //console.log("--weak");
+   // testWeak();
 
 });

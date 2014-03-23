@@ -3,8 +3,8 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
-    <script src="eventing.js"></script>
-    <script src="dobi.js"></script>
+    <script src="../lib/eventing.js"></script>
+    <script src="../lib/dobi.js"></script>
     <title>Binding Declarative Approach</title>
 </head>
 
@@ -198,8 +198,8 @@
         var selectedValue1 = dropdownValues1[1];
 
         var dropdownMetadata1 = {
-            valuePath: 'Name',
-            descriptionPath: 'Name'
+            valuePath: 'key',
+            descriptionPath: 'key'
         };
 
         dobi.bindObject(window, document.getElementById('target'), dobi.parseTransformationFromTemplate(document.getElementById('templates')));
