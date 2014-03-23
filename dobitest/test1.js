@@ -1,3 +1,6 @@
+/* global window*/
+/* global require*/
+
 require(["eventing"], function (eventing) {
     "use strict";
 
@@ -32,8 +35,8 @@ require(["eventing"], function (eventing) {
         eventing.raiseEvent(o1, "o1_signal", "Hallo O2!");
         eventing.raiseEvent(o2, "o2_signal", "Hallo O1!");
 
-        eventing.deleteObject(o1);
-        eventing.deleteObject(o2);
+        eventing.deleteSubscriptions(o1);
+        eventing.deleteSubscriptions(o2);
     };
 
     // =========================================================================
@@ -155,6 +158,39 @@ require(["eventing"], function (eventing) {
 
     };
 
+    // =========================================================================
+    //  test methods
+    // =========================================================================
+    var testWeak = function () {
+
+        // o1 -> o2 -> o3
+        //          -> o4
+
+        var o1 = {};
+        var o2 = {};
+        var o3 = {};
+        var o4 = {};
+
+        eventing.subscribe(o1, 'sig1', o2, function (e) {
+            console.log('o2 received event:', e.message);
+            eventing.raiseEvent(o2, 'sig1', 'forward:' + e.message);
+        });
+
+        eventing.subscribe(o2, 'sig1', o3, function (e) {
+            console.log('o3 received event:', e.message);
+        });
+
+        eventing.subscribe(o2, 'sig1', o4, function (e) {
+            console.log('o4 received event:', e.message);
+        });
+
+        eventing.makeWeak(o2);
+
+        eventing.raiseEvent(o1, 'sig1', 'Hi!');
+        eventing.deleteSubscriptions(o3);
+        eventing.deleteSubscriptions(o4);
+        eventing.raiseEvent(o1, 'sig1', 'Hi!');
+    };
 
     // =========================================================================
     //  main
@@ -166,5 +202,7 @@ require(["eventing"], function (eventing) {
     testClasses();
     console.log("--methods");
     testMethods();
+    console.log("--weak");
+    testWeak();
 
 });

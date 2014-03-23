@@ -6,9 +6,6 @@
     </div>
     <div class="panel-body">
 
-
-
-
         <h2>Data Source</h2>
 
         <div data-bind="/modelEditor/DataSource" data-template="datasource"></div>
@@ -39,10 +36,7 @@
                 <input type="text" data-bind="Description" class="form-control">
             </div>
 
-
             <h2>Attributes</h2>
-
-
 
             <div class="input-group">
                 <span class="input-group-addon">Dimension</span>
@@ -70,7 +64,7 @@
                                 <b>Name:</b>
                             </div>
                             <div class="col-md-4">
-                                <input data-bind="Id">
+                                <input data-bind="Name">
                             </div>
                         </div>
 
@@ -89,9 +83,9 @@
                         <b>PresentationUsage:</b>
                         <br>
                         <span data-bind="dict:PresentationUsage">
-                            <span class="PresentationUsage label label-default" >
-                                <input type="text" data-bind="key"  class="PresentationUsageKey">
-                                <input type="text" data-bind="value"  class="PresentationUsageValue">
+                            <span class="PresentationUsage label label-default">
+                                <input type="text" data-bind="key" class="PresentationUsageKey">
+                                <input type="text" data-bind="value" class="PresentationUsageValue">
                                 <span id="DelPresentationUsage" class="DelPresentationUsage glyphicon glyphicon-remove"></span>
                                 <script>
                                     dobi.script(function(info) {

@@ -1,9 +1,10 @@
 body{
-    background-image: url(grey-honeycomb-pattern-wallpapers_29965_1920x1080.jpg)  ; 
-     background-size: cover;
+    background-image: url(../wallpaper/grey-honeycomb-pattern-wallpapers_29965_1920x1080.jpg); 
+    background-attachment:fixed;
+ /*    background-size: cover;
     -webkit-background-size: cover;
     -moz-background-size: cover;
-    -o-background-size: cover;
+    -o-background-size: cover;*/
 }
 input {
     background-color: inherit;
@@ -49,4 +50,11 @@ h1.maintitle{
 
 .AddPresentationUsage{
     font-size: 10px;
+}
+
+.DsLabel{
+      min-width:160px;
+    text-align:left;
+/*    width:150px;*/
+  /*  text-align: center;*/
 }
