@@ -1,0 +1,68 @@
+<div class="panel panel-primary">
+
+    <div class="panel-heading">
+        <h1 class="panel-title">View</h1>
+    </div>
+
+    <div class="panel-body">
+
+        <h2>Data Source</h2>
+
+        <div data-bind="/cubeEditor/DataSource" data-template="datasource"></div>
+        <br>
+        <button id="LoadView" type="button" class="btn btn-primary">Load</button>
+        <button id="LoadModelView" type="button" class="btn btn-primary">Load View Of Model</button>
+        <script>
+            dobi.script(function(info) {
+                info.getElementById('LoadView').addEventListener('click', function() {
+                    var cubeEditor = info.value('/cubeEditor');
+                    repository.getCube(cubeEditor.DataSource, function(cube) {
+                        cubeEditor.setCube(cube);
+                    });
+                });
+                info.getElementById('LoadModelView').addEventListener('click', function() {
+                    var cubeEditor = info.value('/cubeEditor');
+                    var modelEditor = info.value('/modelEditor');
+                    cubeEditor.setDataSource(modelEditor.model.DataSource);
+                    repository.getCube(cubeEditor.DataSource, function(cube) {
+                        cubeEditor.setCube(cube);
+                    });
+                });
+            });
+        </script>
+
+        <div data-bind="/cubeEditor/dimension">
+
+            <h2>Attributes</h2>
+            <div class="input-group">
+                <span class="input-group-addon">Dimension</span>
+                <div data-bind="." data-template="dropdown" data-template-parameters="/cubeEditor/cube/Dimensions,/dimensionDropdown">
+                </div>
+            </div>
+
+            <br>
+            <ul data-bind="Attributes">
+                <div>
+                    <input type="checkbox" data-bind="selected">
+                    <span data-bind="Name"></span>
+                </div>
+            </ul>
+            <br>
+            <button type="button" class="btn btn-primary" id="CopyDimensions">
+                Copy Selection To Model
+            </button>
+            <script>
+                dobi.script(function(info) {
+                    info.getElementById('CopyDimensions').addEventListener('click', function() {
+                        var cubeEditor = info.value('/cubeEditor');
+                        var modelEditor = info.value('/modelEditor');
+                        modelEditor.copyDimensions(cubeEditor);
+                    });
+                });
+            </script>
+
+        </div>
+
+    </div>
+
+</div>

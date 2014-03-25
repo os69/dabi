@@ -1,6 +1,8 @@
 /* global window*/
 /* global document*/
 /* global alert*/
+/* global setTimeout*/
+/* global console*/
 
 (function (global, $, dobi, list) {
 
@@ -121,8 +123,7 @@
 
     };
 
-    global.repository = global.testRepository;
-
+    global.repository = global.realRepository;
 
     // =======================================================================
     // main
@@ -144,12 +145,67 @@
         },
 
         model: null,
-        
+
         dimension: null,
 
         setModel: function (model) {
             this.model = model;
             this.setDimension(model.Dimensions[0]);
+        },
+
+        transformAttribute: function (attribute) {
+            var resultAttribute = {};
+            resultAttribute.AccessUsage = {};
+            resultAttribute.AccessUsage.FreestyleSearch = attribute.IsFreestyle;
+            resultAttribute.Id = attribute.Name;
+            resultAttribute.Name = attribute.Description;
+            resultAttribute.PresentationUsage = {
+                "Summary": 1,
+                "Title": 1
+            };
+            return resultAttribute;
+        },
+
+        copyDimensions: function (cubeEditor) {
+
+            // determine attributes for insertion
+            var attributes = [];
+            var attribute;
+            for (var i = 0; i < cubeEditor.dimension.Attributes.length; ++i) {
+                attribute = cubeEditor.dimension.Attributes[i];
+                if (!attribute.selected) continue;
+                attributes.push(this.transformAttribute(attribute));
+            }
+
+            // insert
+            var attributeMap = list.createMap(this.dimension.Attributes, function (attribute) {
+                return attribute.Id;
+            });
+            for (i = 0; i < attributes.length; ++i) {
+                attribute = attributes[i];
+                if (attributeMap[attribute.Id]) continue;
+                this.dimension.Attributes.push(attribute);
+            }
+
+        }
+
+    };
+
+    root.cubeEditor = {
+
+        DataSource: {
+            "ObjectName": "LIQUID_SALES_AV1",
+            "PackageName": "liquid-sqe",
+            "Type": "View"
+        },
+
+        cube: null,
+
+        dimension: null,
+
+        setCube: function (cube) {
+            this.cube = cube;
+            this.setDimension(cube.Dimensions[0]);
         }
 
     };
