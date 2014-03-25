@@ -45,6 +45,15 @@
                 }
             });
 
+            selectedEntryProperty.subscribe(dropdown, function(event) {
+                for (var i = 0; i < dropdown.children.length; ++i) {
+                    var entryNode = dropdown.children.item(i);
+                    if (entryNode.value === event.message)
+                        entryNode.setAttribute('selected', 'selected');
+                    else
+                        entryNode.removeAttribute('selected');
+                }
+            });
         });
     </script>
 

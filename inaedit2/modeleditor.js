@@ -123,7 +123,7 @@
 
     };
 
-    global.repository = global.realRepository;
+    global.repository = global.testRepository;
 
     // =======================================================================
     // main
