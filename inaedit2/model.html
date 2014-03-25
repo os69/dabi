@@ -1,0 +1,119 @@
+<div class="panel panel-primary">
+
+    <div class="panel-heading">
+        <h1 class="panel-title">Model</h1>
+    </div>
+
+    <div class="panel-body">
+
+        <h2>Data Source</h2>
+        <div data-bind="/modelEditor/DataSource" data-template="datasource"></div>
+        <br>
+        <button id="LoadModel" type="button" class="btn btn-primary">Load</button>
+        <button id="SaveModel" type="button" class="btn btn-primary">Save</button>
+        <script>
+            dobi.script(function(info) {
+                info.getElementById('LoadModel').addEventListener('click', function() {
+                    var modelEditor = info.value('/modelEditor');
+                    repository.getModel(modelEditor.DataSource, function(model) {
+                        modelEditor.setModel(model);
+                    });
+                });
+                info.getElementById('SaveModel').addEventListener('click', function() {
+                    repository.saveModel(modelEditor.DataSource, modelEditor.model);
+                });
+            });
+        </script>
+
+        <div data-bind="/modelEditor/model">
+            <h2>View Data Source</h2>
+            <div data-bind="DataSource" data-template="datasource"></div>
+        </div>
+
+        <div data-bind="/modelEditor/model">          
+            <h2>Description</h2>
+            <div class="input-group">
+                <span class="input-group-addon">Description</span>
+                <input type="text" data-bind="Description" class="form-control">
+            </div>
+        </div>
+
+        <br>
+        <div data-bind="/modelEditor/dimension" class="input-group">
+            <span class="input-group-addon">Dimension</span>
+            <div data-bind="self" data-template="dropdown" data-template-parameters="/modelEditor/model/Dimensions,/dimensionDropdown"></div>
+        </div>
+
+        <div data-bind="/modelEditor/dimension">
+            <h2>Attributes</h2>
+            <div data-bind="Attributes">
+                <div class="attribute">
+                    <span id="DelAttribute" class="DelAttribute glyphicon glyphicon-remove pull-right"></span>
+                    <br>
+                    <div class="row">
+                        <div class="col-md-2">
+                            <b>Id:</b>
+                        </div>
+                        <div class="col-md-4">
+                            <input data-bind="Id">
+                        </div>
+                        <div class="col-md-2">
+                            <b>Name:</b>
+                        </div>
+                        <div class="col-md-4">
+                            <input data-bind="Name">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-2">
+                            <b>Freestyle:</b>
+                        </div>
+                        <div class="col-md-4">
+
+                            <input type="checkbox" data-bind="AccessUsage/FreestyleSearch">
+                        </div>
+                    </div>
+                    <br>
+                    <b>PresentationUsage:</b>
+                    <br>
+                    <span data-bind="dict:PresentationUsage">
+                        <span class="PresentationUsage label label-default">
+                            <input type="text" data-bind="key" class="PresentationUsageKey">
+                            <input type="text" data-bind="value" class="PresentationUsageValue">
+                            <span id="DelPresentationUsage" class="DelPresentationUsage glyphicon glyphicon-remove"></span>
+                            <script>
+                                dobi.script(function(info) {
+                                    info.getElementById('DelPresentationUsage').addEventListener('click', function() {
+                                        var key = info.resolve('key').value();
+                                        var attribute = info.resolve('../').value();
+                                        attribute.PresentationUsage.dictDel(key);
+                                    });
+                                });
+                            </script>
+                        </span>
+                    </span>
+                    <span id="AddPresentationUsage" class="AddPresentationUsage glyphicon glyphicon-plus"></span>
+                    <script>
+                        dobi.script(function(info) {
+                            info.getElementById('AddPresentationUsage').addEventListener('click', function() {
+                                var attribute = info.resolve('.').value();
+                                attribute.PresentationUsage.dictSet('Area', '1');
+                            });
+                            info.getElementById('DelAttribute').addEventListener('click', function() {
+                                var attribute = info.value('.');
+                                var attributes = info.value('../Attributes');
+                                var index = attributes.indexOf(attribute);
+                                if (index >= 0) attributes.splice(index, 1);
+                            });
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="../tp/jquery-1.11.0.min.js" type="text/javascript"></script>
+    <script src="../lib/list.js"></script>
+    <script src="../lib/eventing.js"></script>
+    <script src="../lib/dobi.js"></script>
+    <title>Model Editor</title>
+    <link href="../tp/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="modeleditor.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div id="templates">
+
+        <!-- ================================================================= -->
+        <!-- templates from library -->
+        <!-- ================================================================= -->
+        <script>
+            dobi.loadHtml("templates.html");
+        </script>
+
+        <!-- ================================================================= -->
+        <!-- data source template -->
+        <!-- ================================================================= -->
+        <div data-def-template="datasource">
+
+            <div class="input-group">
+                <span class="input-group-addon DsLabel">ObjectName</span>
+                <input type="text" data-bind="ObjectName" class="form-control">
+            </div>
+            <br>
+            <div class="input-group">
+                <span class="input-group-addon DsLabel">PackageName</span>
+                <input type="text" data-bind="PackageName" class="form-control">
+            </div>
+            <br>
+            <div class="input-group">
+                <span class="input-group-addon DsLabel">Type</span>
+                <input type="text" data-bind="Type" class="form-control">
+            </div>
+
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- main layout -->
+        <!-- ================================================================= -->
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <br>
+                    <script>
+                        dobi.loadHtml("model.html");
+                    </script>
+                </div>
+                <div class="col-md-6">
+                    <br>
+                    <script>
+                        dobi.loadHtml("cube.html");
+                    </script>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="target"></div>
+    <script src="../tp/bootstrap/js/bootstrap.min.js"></script>
+    <script src="modeleditor.js"></script>
+
+</body>
+
+</html>
+
