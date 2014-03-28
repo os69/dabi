@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="../lib/eventing.js"></script>
+    <script src="../lib/dobi.js"></script>
+    <script src="../lib/list.js"></script>
+    <title>Binding</title>
+</head>
+
+<body>
+
+    <div id="templates">
+
+        <div data-def-template="node">
+            <li>
+                {{description}}
+                <ul data-bind="children" data-template="node"></ul>
+            </li>
+        </div>
+
+        <ul data-bind="tree" data-template="node"></ul>
+
+    </div>
+
+    <script>
+        var tree = {
+            id: '1',
+            description: 'Node 1',
+            children: [{
+                id: '1.1',
+                description: 'Node 1.1',
+                children: [{
+                    id: '1.1.1',
+                    description: 'Node 1.1.1',
+                    children: []
+                }, {
+                    id: '1.1.2',
+                    description: 'Node 1.1.2',
+                    children: []
+                }]
+            }, {
+                id: '1.2',
+                description: 'Node 1.2',
+                children: [{
+                    id: '1.2.1',
+                    description: 'Node 1.2.1',
+                    children: []
+                }, {
+                    id: '1.2.2',
+                    description: 'Node 1.2.2',
+                    children: []
+                }]
+            }]
+        };
+
+        var changedTree = {
+            id: '1',
+            description: 'Node 1',
+            children: [{
+                id: '1.1',
+                description: 'Node 1.1',
+                children: [{
+                    id: '1.1.1',
+                    description: 'Node 1.1.1',
+                    children: []
+                }, {
+                    id: '1.1.2',
+                    description: 'Node 1.1.2',
+                    children: []
+                }]
+            }, {
+                id: '1.2',
+                description: 'Node 1.2',
+                children: [{
+                    id: '1.2.1x',
+                    description: 'Node 1.2.1x',
+                    children: []
+                }, {
+                    id: '1.2.2',
+                    description: 'Node 1.2.2',
+                    children: []
+                }, {
+                    id: '1.2.3',
+                    description: 'Node 1.2.3',
+                    children: []
+                }]
+            }]
+        };
+
+
+        dobi.run(window, document.getElementById('templates'));
+
+        var update = function(tree1, tree2) {
+            list.deltaSet(tree1.children, tree2.children, function(stree1, stree2) {
+                return stree1.id === stree2.id;
+            }, function(stree1, stree2) {
+                update(stree1, stree2);
+            });
+        };
+
+        update(tree, changedTree);
+        
+    </script>
+</body>
+
+</html>
+

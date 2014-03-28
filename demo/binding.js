@@ -16,22 +16,39 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
     // helper
     // =======================================================================
     var helper = {
-    
-        heading : function(text){
+
+        heading: function (text) {
             var h = document.createElement('h1');
             document.body.appendChild(h);
             h.appendChild(document.createTextNode(text));
+        },
+
+        createInputField: function (parentNode, label) {
+
+            var container = document.createElement('tr');
+            parentNode.appendChild(container);
+
+            var cell = document.createElement('td');
+            container.appendChild(cell);
+            cell.appendChild(document.createTextNode(label));
+
+            cell = document.createElement('td');
+            container.appendChild(cell);
+            var inputNode = document.createElement('input');
+            cell.appendChild(inputNode);
+
+            return inputNode;
         }
-        
+
     };
-    
+
     // =======================================================================
     // bind list to dom
     // =======================================================================
     var listBinding1 = function () {
 
         helper.heading('Bind List to Dom');
-        
+
         // model: create a list
         var list = [];
 
@@ -68,23 +85,23 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
     };
 
     // =======================================================================
-    // bind string to dom
+    // bind string property to dom
     // =======================================================================
     var stringBinding1 = function () {
 
         helper.heading('Bind String Property to Dom');
-        
-        // create a sales order
+
+        // model: create a sales order
         var salesOrder = {
             id: 'Order 1'
         };
 
-        // create an input field for the id
+        // view: create an input field for the id
         var idNode1 = document.createElement('input');
         document.body.appendChild(idNode1);
 
-        // create an text field for the id
-        var idNode2 = document.createElement('span');
+        // view: create display field for the id
+        var idNode2 = document.createElement('div');
         document.body.appendChild(idNode2);
 
         // bind salesOrder.id to idNode1, idNode2
@@ -99,26 +116,35 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
     var stringBinding2 = function () {
 
         helper.heading('Bind String Property to Object Hierarchy');
-        
+
+        // status released
         var statusReleased = {
             code: 'REL',
             description: 'Released'
         };
 
+        // status locked
         var statusLocked = {
             code: 'LOCK',
             description: 'Locked'
         };
 
+        // model: sales order with staus
         var salesOrder = {
             status: statusReleased
         };
 
-        var statusDescriptionNode = document.createElement('span');
-        document.body.appendChild(statusDescriptionNode);
+        // view: two output nodes for the status
+        var statusDescriptionNode1 = document.createElement('div');
+        document.body.appendChild(statusDescriptionNode1);
+        var statusDescriptionNode2 = document.createElement('div');
+        document.body.appendChild(statusDescriptionNode2);
 
-        dobi.bindString(dobi.property(salesOrder, 'status/description'), statusDescriptionNode);
+        // bind description 
+        dobi.bindString(dobi.property(salesOrder.status, 'description'), statusDescriptionNode1);
+        dobi.bindString(dobi.property(salesOrder, 'status/description'), statusDescriptionNode2);
 
+        // change status
         salesOrder.setStatus(statusLocked);
     };
 
@@ -128,26 +154,31 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
     var listBinding2 = function () {
 
         helper.heading('Bind List Property to Dom');
-        
+
+        // model: sales order with items
         var salesOrder = {
             items: ['iPad', 'iPhone', 'iMac']
         };
 
+        // view: create list node
         var listNode = document.createElement('ul');
         document.body.appendChild(listNode);
 
+        // transformation model item -> view item
         var trans = function (item, parentNode, refNode) {
             var liNode = document.createElement('li');
             dobi.insertNode(liNode, parentNode, refNode);
             liNode.appendChild(document.createTextNode(item.value()));
         };
 
+        // bind model to view
         dobi.bindList(dobi.property(salesOrder, 'items'), listNode, trans);
 
+        // modify list
         salesOrder.items.push('iWatch');
 
+        // assign new list
         var items2 = ['Galaxy S4', 'Galaxy Note'];
-
         salesOrder.setItems(items2);
 
     };
@@ -158,12 +189,19 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
     var objectBinding1 = function () {
 
         helper.heading('Bind Object Property to Dom');
-        
+
+        // run template parser (for parsing the status template)
+        dobi.run(window, document.getElementById('templates'));
+
+        // -------------------------------------------------------------------
+        // model
+        // -------------------------------------------------------------------
         var world = {
 
             salesOrder: {
                 id: '4711',
-                description: 'Tebartz-van Elst (kleiner Einkauf)',
+                owner: 'Tebart-van Elst',
+                description: 'Kleiner Einkauf',
                 status: {
                     code: 'REL',
                     description: 'Released'
@@ -181,6 +219,9 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
             }
         };
 
+        // -------------------------------------------------------------------
+        // transformation model sales order -> view sales order
+        // -------------------------------------------------------------------
         var salesOrderTrans = function (salesOrderProperty, parentNode, refNode) {
 
             // helper for add button
@@ -199,20 +240,36 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
             var containerNode = document.createElement('div');
             dobi.insertNode(containerNode, parentNode, refNode);
 
+            // heading
+            var headingNode = document.createElement('h2');
+            containerNode.appendChild(headingNode);
+            headingNode.appendChild(document.createTextNode('Sales Order'));
+            var idHeading = document.createTextNode('');
+            headingNode.appendChild(idHeading);
+            dobi.bindString(salesOrderProperty.resolve('id'), idHeading);
+
+            // table
+            var table = document.createElement('table');
+            containerNode.appendChild(table);
+
             // id
-            var idNode = document.createElement('input');
-            containerNode.appendChild(idNode);
+            var idNode = helper.createInputField(table, 'id:');
             var idProperty = salesOrderProperty.resolve('id');
             dobi.bindString(idProperty, idNode);
 
+            //owner
+            var ownerNode = helper.createInputField(table, 'owner:');
+            var ownerProperty = salesOrderProperty.resolve('owner');
+            dobi.bindString(ownerProperty, ownerNode);
+
             // description
-            var descriptionNode = document.createElement('input');
-            containerNode.appendChild(descriptionNode);
+            var descriptionNode = helper.createInputField(table, 'description:');
             var descriptionProperty = salesOrderProperty.resolve('description');
             dobi.bindString(descriptionProperty, descriptionNode);
 
-            dobi.bindObject(salesOrderProperty.resolve('status'),containerNode,dobi.transformations.status);
-            
+            // status
+            dobi.bindObject(salesOrderProperty.resolve('status'), containerNode, dobi.transformations.status);
+
             // items
             var itemsNode = document.createElement('ul');
             containerNode.appendChild(itemsNode);
@@ -233,6 +290,9 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
 
         };
 
+        // -------------------------------------------------------------------
+        // transformation model item -> view item
+        // -------------------------------------------------------------------
         var itemsTrans = function (itemProperty, parentNode, refNode) {
             var liNode = document.createElement('li');
             dobi.insertNode(liNode, parentNode, refNode);
@@ -257,18 +317,24 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
 
         };
 
-        dobi.run(window, document.getElementById('templates'));
-        
+
+        // -------------------------------------------------------------------
+        // display sales order
+        // -------------------------------------------------------------------
         var salesOrderNode = document.createElement('div');
         document.body.appendChild(salesOrderNode);
         dobi.bindObject(dobi.property(world, 'salesOrder'), salesOrderNode, salesOrderTrans);
 
+
         salesOrderNode = document.createElement('div');
         document.body.appendChild(salesOrderNode);
         dobi.bindObject(dobi.property(world, 'salesOrder'), salesOrderNode, salesOrderTrans);
-        
+
     };
 
+    // =======================================================================
+    // start demos
+    // =======================================================================
     listBinding1();
     stringBinding1();
     stringBinding2();
