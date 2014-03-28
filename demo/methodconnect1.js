@@ -1,5 +1,7 @@
 /*global define */
 /*global console*/
+/*global require */
+/*global requirejs */
 
 requirejs.config({
     baseUrl: '..',

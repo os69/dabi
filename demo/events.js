@@ -1,3 +1,5 @@
+/*global require */
+/*global requirejs */
 /*global define */
 /*global console*/
 
@@ -67,13 +69,4 @@ require(['lib/eventing'], function (eventing) {
     eventing.subscribe(null,'GlobalSignal',receiver,'handler1');
     eventing.raiseEvent(null,'GlobalSignal',40);
     
-    
-    
-
-
-
-
-
-
-
 });

@@ -5,14 +5,14 @@
             <script>
                 dobi.script(function(info) {
 
-                    var metadata = info.resolve('metadata').value();
+                    var metadata = info.resolveValue('metadata');
 
                     var selectedEntryProperty = info.resolve('../');
-                    var selectedValue = selectedEntryProperty.resolve(metadata.valuePath).value();
+                    var selectedValue = selectedEntryProperty.resolveValue(metadata.valuePath);
 
                     var entryProperty = info.resolve('.');
-                    var value = entryProperty.resolve(metadata.valuePath).value();
-                    var description = entryProperty.resolve(metadata.descriptionPath).value();
+                    var value = entryProperty.resolveValue(metadata.valuePath);
+                    var description = entryProperty.resolveValue(metadata.descriptionPath);
 
                     info.parentNode.setAttribute('value', value);
                     info.parentNode.textContent = description;
@@ -30,7 +30,7 @@
     <script>
         dobi.script(function(info) {
 
-            var metadata = info.resolve('metadata').value();
+            var metadata = info.resolveValue('metadata');
             var dropdown = info.getElementById('dropdown');
             var entriesProperty = info.resolve('entries');
             var selectedEntryProperty = info.resolve('.');
@@ -38,13 +38,22 @@
             dropdown.addEventListener('click', function() {
                 for (var i = 0; i < entriesProperty.value().length; ++i) {
                     var entryProperty = entriesProperty.resolve("" + i);
-                    var value = entryProperty.resolve(metadata.valuePath).value();
+                    var value = entryProperty.resolveValue(metadata.valuePath);
                     if (value === dropdown.value) {
                         selectedEntryProperty.set(entryProperty.value());
                     }
                 }
             });
 
+            selectedEntryProperty.subscribe(dropdown, function(event) {
+                for (var i = 0; i < dropdown.children.length; ++i) {
+                    var entryNode = dropdown.children.item(i);
+                    if (entryNode.value === event.message)
+                        entryNode.setAttribute('selected', 'selected');
+                    else
+                        entryNode.removeAttribute('selected');
+                }
+            });
         });
     </script>
 

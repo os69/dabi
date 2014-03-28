@@ -16,21 +16,42 @@
 
 <body>
 
-    <script>
-        dobi.testProperties();
-    </script>
-    
     <div id="templates">
 
+        <!-- ================================================================= -->
+        <!-- templates from library -->
+        <!-- ================================================================= -->
         <script>
             dobi.loadHtml("templates.html");
         </script>
 
+        <!-- ================================================================= -->
+        <!-- data source template -->
+        <!-- ================================================================= -->
+        <div data-def-template="datasource">
+
+            <div class="input-group">
+                <span class="input-group-addon DsLabel">ObjectName</span>
+                <input type="text" data-bind="ObjectName" class="form-control">
+            </div>
+            <br>
+            <div class="input-group">
+                <span class="input-group-addon DsLabel">PackageName</span>
+                <input type="text" data-bind="PackageName" class="form-control">
+            </div>
+            <br>
+            <div class="input-group">
+                <span class="input-group-addon DsLabel">Type</span>
+                <input type="text" data-bind="Type" class="form-control">
+            </div>
+
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- main layout -->
+        <!-- ================================================================= -->
         <div class="container">
 
-            <!-- ================================================================= -->
-            <!-- title -->
-            <!-- ================================================================= -->
             <br>
             <div class="panel panel-primary">
                 <div class="panel-heading">
@@ -38,44 +59,23 @@
                 </div>
             </div>
 
-            <!-- ================================================================= -->
-            <!-- data source template -->
-            <!-- ================================================================= -->
-            <div data-def-template="datasource">
-
-                <div class="input-group">
-                    <span class="input-group-addon DsLabel">ObjectName</span>
-                    <input type="text" data-bind="ObjectName" class="form-control">
-                </div>
-                <br>
-                <div class="input-group">
-                    <span class="input-group-addon DsLabel">PackageName</span>
-                    <input type="text" data-bind="PackageName" class="form-control">
-                </div>
-                <br>
-                <div class="input-group">
-                    <span class="input-group-addon DsLabel">Type</span>
-                    <input type="text" data-bind="Type" class="form-control">
-                </div>
-
-            </div>
-
-            <!-- ================================================================= -->
-            <!-- model & view -->
-            <!-- ================================================================= -->
             <div class="row">
                 <div class="col-md-6">
+                    <br>
                     <script>
                         dobi.loadHtml("model.html");
                     </script>
                 </div>
                 <div class="col-md-6">
+                    <br>
                     <script>
                         dobi.loadHtml("cube.html");
                     </script>
                 </div>
             </div>
+                        
         </div>
+
     </div>
 
     <div id="target"></div>

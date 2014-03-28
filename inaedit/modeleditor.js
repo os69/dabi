@@ -1,6 +1,8 @@
 /* global window*/
 /* global document*/
 /* global alert*/
+/* global setTimeout*/
+/* global console*/
 
 (function (global, $, dobi, list) {
 
@@ -123,35 +125,34 @@
 
     global.repository = global.testRepository;
 
-    global.dimensionDropdown = {
+    // =======================================================================
+    // main
+    // =======================================================================
+
+    var root = {};
+
+    root.dimensionDropdown = {
         valuePath: 'Name',
         descriptionPath: 'Name'
     };
 
-    // =======================================================================
-    // model editor
-    // =======================================================================    
-    var modelEditor = global.modelEditor = {
+    root.modelEditor = {
 
         DataSource: {
             "ObjectName": "INAM_LIQUID_SALES_OLI",
             "PackageName": "bics.basic",
             "Type": "InaSearch"
         },
-        
+
         model: null,
-        
+
         dimension: null,
-        
+
         setModel: function (model) {
             this.model = model;
             this.setDimension(model.Dimensions[0]);
         },
-        
-        setDimension: function (dimension) {
-            this.dimension = dimension;
-        },
-        
+
         transformAttribute: function (attribute) {
             var resultAttribute = {};
             resultAttribute.AccessUsage = {};
@@ -165,7 +166,7 @@
             return resultAttribute;
         },
 
-        copyDimensions: function () {
+        copyDimensions: function (cubeEditor) {
 
             // determine attributes for insertion
             var attributes = [];
@@ -187,27 +188,28 @@
             }
 
         }
-        
+
     };
 
-    // =======================================================================
-    // cube editor
-    // =======================================================================
-    global.cubeEditor = {};
-    var cubeEditor = global.cubeEditor;
-    cubeEditor.dimension = null;
-    cubeEditor.cube = {
-        "DataSource": {
-            "PackageName": "liquid-sqe",
+    root.cubeEditor = {
+
+        DataSource: {
             "ObjectName": "LIQUID_SALES_AV1",
+            "PackageName": "liquid-sqe",
             "Type": "View"
-        }
-    };
-    
+        },
 
-    // =======================================================================
-    // bind
-    // =======================================================================
-    dobi.run(window, document.getElementById('templates'), document.getElementById('target'));
+        cube: null,
+
+        dimension: null,
+
+        setCube: function (cube) {
+            this.cube = cube;
+            this.setDimension(cube.Dimensions[0]);
+        }
+
+    };
+
+    dobi.run(root, document.getElementById('templates'), document.getElementById('target'));
 
 })(window, window.$, window.dobi, window.list);

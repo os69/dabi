@@ -13,10 +13,25 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
     "use strict";
 
     // =======================================================================
+    // helper
+    // =======================================================================
+    var helper = {
+    
+        heading : function(text){
+            var h = document.createElement('h1');
+            document.body.appendChild(h);
+            h.appendChild(document.createTextNode(text));
+        }
+        
+    };
+    
+    // =======================================================================
     // bind list to dom
     // =======================================================================
     var listBinding1 = function () {
 
+        helper.heading('Bind List to Dom');
+        
         // model: create a list
         var list = [];
 
@@ -57,6 +72,8 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
     // =======================================================================
     var stringBinding1 = function () {
 
+        helper.heading('Bind String Property to Dom');
+        
         // create a sales order
         var salesOrder = {
             id: 'Order 1'
@@ -71,8 +88,8 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
         document.body.appendChild(idNode2);
 
         // bind salesOrder.id to idNode1, idNode2
-        dobi.bindString(dobi.makeProperty(salesOrder, 'id'), idNode1);
-        dobi.bindString(dobi.makeProperty(salesOrder, 'id'), idNode2);
+        dobi.bindString(dobi.property(salesOrder, 'id'), idNode1);
+        dobi.bindString(dobi.property(salesOrder, 'id'), idNode2);
 
     };
 
@@ -81,6 +98,8 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
     // =======================================================================
     var stringBinding2 = function () {
 
+        helper.heading('Bind String Property to Object Hierarchy');
+        
         var statusReleased = {
             code: 'REL',
             description: 'Released'
@@ -98,7 +117,7 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
         var statusDescriptionNode = document.createElement('span');
         document.body.appendChild(statusDescriptionNode);
 
-        dobi.bindString(dobi.makeProperty(salesOrder, 'status/description'), statusDescriptionNode);
+        dobi.bindString(dobi.property(salesOrder, 'status/description'), statusDescriptionNode);
 
         salesOrder.setStatus(statusLocked);
     };
@@ -108,6 +127,8 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
     // =======================================================================
     var listBinding2 = function () {
 
+        helper.heading('Bind List Property to Dom');
+        
         var salesOrder = {
             items: ['iPad', 'iPhone', 'iMac']
         };
@@ -121,7 +142,7 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
             liNode.appendChild(document.createTextNode(item.value()));
         };
 
-        dobi.bindList(dobi.makeProperty(salesOrder, 'items'), listNode, trans);
+        dobi.bindList(dobi.property(salesOrder, 'items'), listNode, trans);
 
         salesOrder.items.push('iWatch');
 
@@ -136,6 +157,8 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
     // =======================================================================
     var objectBinding1 = function () {
 
+        helper.heading('Bind Object Property to Dom');
+        
         var world = {
 
             salesOrder: {
@@ -238,12 +261,11 @@ require(['lib/dobi', 'lib/list'], function (dobi, listLib) {
         
         var salesOrderNode = document.createElement('div');
         document.body.appendChild(salesOrderNode);
-        dobi.bindObject(dobi.makeProperty(world, 'salesOrder'), salesOrderNode, salesOrderTrans);
+        dobi.bindObject(dobi.property(world, 'salesOrder'), salesOrderNode, salesOrderTrans);
 
         salesOrderNode = document.createElement('div');
         document.body.appendChild(salesOrderNode);
-        dobi.bindObject(dobi.makeProperty(world, 'salesOrder'), salesOrderNode, salesOrderTrans);
-
+        dobi.bindObject(dobi.property(world, 'salesOrder'), salesOrderNode, salesOrderTrans);
         
     };
 
