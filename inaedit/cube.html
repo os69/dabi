@@ -23,7 +23,9 @@
                 info.getElementById('LoadModelView').addEventListener('click', function() {
                     var cubeEditor = info.resolveValue('/cubeEditor');
                     var modelEditor = info.resolveValue('/modelEditor');
-                    cubeEditor.setDataSource(modelEditor.model.DataSource);
+                    cubeEditor.DataSource.setObjectName(modelEditor.model.DataSource.ObjectName);
+                    cubeEditor.DataSource.setPackageName(modelEditor.model.DataSource.PackageName);
+                    cubeEditor.DataSource.setType(modelEditor.model.DataSource.Type);    
                     repository.getCube(cubeEditor.DataSource, function(cube) {
                         cubeEditor.setCube(cube);
                     });

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="../lib/eventing.js"></script>
+    <script src="../lib/dobi.js"></script>
+    <title>Binding</title>
+</head>
+
+<body>
+
+    <div id="templates">
+        
+        <ul id="list1" data-bind="list1">
+            <li>{{.}}
+                <button id="b">b
+                    <script>
+                        dobi.script(function(info){
+                            info.getElementById("b").addEventListener('click',function(){
+                                var s = info.resolve('.');      
+                            });
+                        });
+                    </script>
+                </button>
+            </li>
+        </ul>
+        
+    </div>
+
+    <script>
+        
+        var list1 = ["1","2","3"];        
+        dobi.run(window, document.getElementById('templates'));
+        
+        
+    </script>
+</body>
+
+</html>
+
