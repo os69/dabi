@@ -179,7 +179,7 @@
             }
 
             // insert
-            var attributeMap = list.createMap(this.dimension.Attributes, function (attribute) {
+            var attributeMap = window.dobiRoot.list.createMap(this.dimension.Attributes, function (attribute) {
                 return attribute.Id;
             });
             for (i = 0; i < attributes.length; ++i) {
