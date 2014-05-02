@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="../rel/dobi.min.js"></script>
+    <title>Binding</title>
+</head>
+
+<body>
+
+    <div id="templates">
+
+        <div data-def-template="SalesOrder">
+            <h1>Sales Order {{id}}</h1>
+            <table>
+                <tr>
+                    <td>Id</td>
+                    <td>
+                        <input type="text" data-bind="id">
+                    </td>
+                </tr>
+                <tr>
+                    <td>Description</td>
+                    <td>
+                        <input type="text" data-bind="description">
+                    </td>
+                </tr>
+            </table>
+            <ul data-bind="items">
+                <li>
+                    Item:
+                    <input type="text" data-bind="pos">Description:
+                    <input type="text" data-bind="description">
+                    <button id="del">Del</button>
+                    <script>
+                        dobi.script(function(info) {
+                            info.getElementById('del').addEventListener('click', function() {
+                                var items = info.resolveValue('../items');
+                                var index = info.resolve('.').listIndex();
+                                if (index >= 0) items.splice(index, 1);
+                            });
+                        });
+                    </script>
+                    <br>Tags:
+                    <span data-bind="tags">
+                        <span>
+                            <input type="text" data-bind=".">
+                            <button id="delTag">del</button>
+                            <script>
+                                dobi.script(function(info) {
+                                    info.getElementById('delTag').addEventListener('click', function() {
+                                        var index = info.resolve('.').listIndex();
+                                        var tags = info.resolveValue('../tags');
+                                        if (index >= 0) tags.splice(index, 1);
+                                    });
+                                });
+                            </script>
+                        </span>
+                    </span>
+                </li>
+            </ul>
+            <button id="add">Add</button>
+            <script>
+                dobi.script(function(info) {
+                    info.getElementById('add').addEventListener('click', function() {
+                        var items = info.resolveValue('./items');
+                        items.push({
+                            pos: getMaxPos(items),
+                            description: 'something',
+                            tags: ['tag']
+                        });
+                    });
+                });
+            </script>
+        </div>
+
+        <div data-bind="salesOrder" data-template="SalesOrder"></div>
+        <div data-bind="salesOrder" data-template="SalesOrder"></div>
+
+    </div>
+
+    <script>
+        var getMaxPos = function(items) {
+            var maxPos = 0;
+            for (var i = 0; i < items.length; ++i) {
+                var item = items[i];
+                var pos = parseInt(item.pos);
+                if (pos > maxPos)
+                    maxPos = pos;
+            }
+            return "" + (maxPos + 10);
+        };
+
+        var salesOrder = {
+            id: '4711',
+            description: 'Some goodies',
+            items: [{
+                pos: '10',
+                description: 'iPad',
+                tags: ['mobile', 'apple']
+            }, {
+                pos: '20',
+                description: 'iPhone',
+                tags: ['mobile', 'apple']
+            }, {
+                pos: '30',
+                description: 'iWatch',
+                tags: ['mobile', 'apple']
+            }]
+        };
+        dobi.binding.run(window, document.getElementById('templates'));
+
+    </script>
+</body>
+
+</html>
+
