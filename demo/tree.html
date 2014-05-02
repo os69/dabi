@@ -5,9 +5,10 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="../lib/eventing.js"></script>
-    <script src="../lib/dobi.js"></script>
-    <script src="../lib/list.js"></script>
+    <script src="../dobi/eventing.js"></script>
+    <script src="../dobi/property.js"></script>
+    <script src="../dobi/binding.js"></script>
+    <script src="../dobi/list.js"></script>
     <title>Binding</title>
 </head>
 
@@ -92,18 +93,17 @@
         };
 
 
-        dobi.run(window, document.getElementById('templates'));
+        dobi.binding.run(window, document.getElementById('templates'));
 
-        var update = function(tree1, tree2) {
-            list.deltaSet(tree1.children, tree2.children, function(stree1, stree2) {
+        var update = function (tree1, tree2) {
+            dobi.list.deltaSet(tree1.children, tree2.children, function (stree1, stree2) {
                 return stree1.id === stree2.id;
-            }, function(stree1, stree2) {
+            }, function (stree1, stree2) {
                 update(stree1, stree2);
             });
         };
 
         update(tree, changedTree);
-        
     </script>
 </body>
 

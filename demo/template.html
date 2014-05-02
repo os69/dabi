@@ -5,8 +5,9 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="../lib/eventing.js"></script>
-    <script src="../lib/dobi.js"></script>
+    <script src="../dobi/eventing.js"></script>
+    <script src="../dobi/property.js"></script>
+    <script src="../dobi/binding.js"></script>
     <title>Binding</title>
 </head>
 
@@ -14,7 +15,12 @@
 
     <div id="templates">
 
+        <div data-def-template="input">
+            <input type="text" data-bind=".">
+        </div>
+        
         <div data-bind="salesOrder/id"></div>
+        <div data-bind="salesOrder/id" data-template="input"></div>
 
     </div>
 
@@ -22,7 +28,7 @@
         var salesOrder = {
             id: '4711'
         };
-        dobi.run(window, document.getElementById('templates'));
+        dobi.binding.run(window, document.getElementById('templates'));
     </script>
 </body>
 

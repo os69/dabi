@@ -179,7 +179,7 @@
             }
 
             // insert
-            var attributeMap = window.dobiRoot.list.createMap(this.dimension.Attributes, function (attribute) {
+            var attributeMap = window.dobi.list.createMap(this.dimension.Attributes, function (attribute) {
                 return attribute.Id;
             });
             for (i = 0; i < attributes.length; ++i) {
@@ -211,6 +211,6 @@
 
     };
 
-    dobi.run(root, document.getElementById('templates'), document.getElementById('target'));
+    dobi.binding.run(root, document.getElementById('templates'), document.getElementById('target'));
 
 })(window, window.$, window.dobi, window.list);

@@ -8,7 +8,7 @@ requirejs.config({
 });
 
 
-require(['lib/eventing'], function (eventing) {
+require(['dobi/eventing'], function (eventingModule) {
     "use strict";
 
     // =======================================================================
@@ -47,8 +47,8 @@ require(['lib/eventing'], function (eventing) {
 
     };
     
-    eventing.connect(viewer1,'setValue',model,'setValue');
-    eventing.connect(viewer2,'setValue',model,'setValue');
+    eventingModule.connect(viewer1,'setValue',model,'setValue');
+    eventingModule.connect(viewer2,'setValue',model,'setValue');
 
     model.setValue(10);
     viewer1.setValue(20);

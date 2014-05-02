@@ -8,7 +8,7 @@ requirejs.config({
 });
 
 
-require(['lib/eventing'], function (eventing) {
+require(['dobi/eventing'], function (eventingModule) {
     "use strict";
 
 
@@ -19,7 +19,7 @@ require(['lib/eventing'], function (eventing) {
 
         setValue: function (value) {
             this.value = value;
-            eventing.raiseEvent(this, 'ValueChangedSignal', value);
+            eventingModule.raiseEvent(this, 'ValueChangedSignal', value);
         }
 
     };
@@ -42,9 +42,9 @@ require(['lib/eventing'], function (eventing) {
     // =======================================================================
     // subscription to events
     // =======================================================================
-    eventing.subscribe(sender, 'ValueChangedSignal', receiver, receiver.handler1);
-    eventing.subscribe(sender, 'ValueChangedSignal', receiver, 'handler2');
-    eventing.subscribe(sender, 'ValueChangedSignal', receiver, function(event){
+    eventingModule.subscribe(sender, 'ValueChangedSignal', receiver, receiver.handler1);
+    eventingModule.subscribe(sender, 'ValueChangedSignal', receiver, 'handler2');
+    eventingModule.subscribe(sender, 'ValueChangedSignal', receiver, function(event){
         console.log('handler3: received event', event.message); // this=receiver
     });
 
@@ -53,20 +53,20 @@ require(['lib/eventing'], function (eventing) {
     // =======================================================================
     // unsubscribe
     // =======================================================================
-    eventing.unSubscribe(sender, 'ValueChangedSignal', receiver, receiver.handler1);
+    eventingModule.unSubscribe(sender, 'ValueChangedSignal', receiver, receiver.handler1);
     sender.setValue(20);
     
     // =======================================================================
     // delete object:   delete subscriptions 
     //                + delete subscriptions of other objects to signals of this object
     // =======================================================================
-    eventing.deleteSubscriptions(receiver);
+    eventingModule.deleteSubscriptions(receiver);
     sender.setValue(30);
     
     // =======================================================================
     // global events (event bus)
     // =======================================================================
-    eventing.subscribe(null,'GlobalSignal',receiver,'handler1');
-    eventing.raiseEvent(null,'GlobalSignal',40);
+    eventingModule.subscribe(null,'GlobalSignal',receiver,'handler1');
+    eventingModule.raiseEvent(null,'GlobalSignal',40);
     
 });

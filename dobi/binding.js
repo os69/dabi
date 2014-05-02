@@ -11,11 +11,11 @@
 (function () {
 
     var define = window.define || function (deps, mod) {
-        window.dobiRoot = window.dobiRoot || {};
-        window.dobi = window.dobiRoot.dobi = mod(window.dobiRoot.eventing, window.dobiRoot.property);
+        window.dobi = window.dobi || {};
+        window.dobi.binding = mod(window.dobi.eventing, window.dobi.property);
     };
 
-    define(["lib/eventing", "lib/property"], function (eventingModule, propertyModule) {
+    define(["dobi/eventing", "dobi/property"], function (eventingModule, propertyModule) {
 
         var module = {};
 
@@ -42,7 +42,6 @@
                 throw "HTTP GET failed:" + path;
             document.write(request.responseText); // jshint ignore:line
         };
-
 
         // ===================================================================
         // unbind dom element
@@ -348,8 +347,9 @@
             var scriptTag = scriptTags.item(scriptTags.length - 1);
             scriptTag.templateScript = script;
         };
-
-
+        window.dobi = window.dobi || {};
+        window.dobi.script = module.script;
+        
         // ===================================================================
         // environment
         // ===================================================================        
@@ -674,7 +674,7 @@
                         if (!path) {
                             return property;
                         } else {
-                            return propertyModule.objectProperty(property.value(), path);                            
+                            return propertyModule.objectProperty(property.value(), path);
                         }
                     }
 

@@ -9,7 +9,7 @@ requirejs.config({
 });
 
 
-require(['lib/dobi', 'lib/list', 'lib/property'], function (dobi, listLib, propertyModule) {
+require(['dobi/binding', 'dobi/list', 'dobi/property'], function (bindingModule, listModule, propertyModule) {
     "use strict";
 
     // =======================================================================
@@ -59,12 +59,12 @@ require(['lib/dobi', 'lib/list', 'lib/property'], function (dobi, listLib, prope
         // transformation model list item -> view list item
         var trans = function (item, parentNode, refNode) {
             var itemNode = document.createElement('li');
-            dobi.insertNode(itemNode, parentNode, refNode);
+            bindingModule.insertNode(itemNode, parentNode, refNode);
             itemNode.appendChild(document.createTextNode(item.value()));
         };
 
         // bind model to view
-        dobi.bindList(list, listNode, trans);
+        bindingModule.bindList(list, listNode, trans);
 
         // fill list
         list.push('Hello');
@@ -80,7 +80,7 @@ require(['lib/dobi', 'lib/list', 'lib/property'], function (dobi, listLib, prope
         var list2 = ['Hi!', 'World', 'Hello'];
 
         // delta update of list (list will be modified so that at the end list has elements+order identical to list2)
-        listLib.deltaSet(list, list2);
+        listModule.deltaSet(list, list2);
 
     };
 
@@ -105,8 +105,8 @@ require(['lib/dobi', 'lib/list', 'lib/property'], function (dobi, listLib, prope
         document.body.appendChild(idNode2);
 
         // bind salesOrder.id to idNode1, idNode2
-        dobi.bindString(propertyModule.property(salesOrder, 'id'), idNode1);
-        dobi.bindString(propertyModule.property(salesOrder, 'id'), idNode2);
+        bindingModule.bindString(propertyModule.objectProperty(salesOrder, 'id'), idNode1);
+        bindingModule.bindString(propertyModule.objectProperty(salesOrder, 'id'), idNode2);
 
     };
 
@@ -141,8 +141,8 @@ require(['lib/dobi', 'lib/list', 'lib/property'], function (dobi, listLib, prope
         document.body.appendChild(statusDescriptionNode2);
 
         // bind description 
-        dobi.bindString(propertyModule.property(salesOrder.status, 'description'), statusDescriptionNode1);
-        dobi.bindString(propertyModule.property(salesOrder, 'status/description'), statusDescriptionNode2);
+        bindingModule.bindString(propertyModule.objectProperty(salesOrder.status, 'description'), statusDescriptionNode1);
+        bindingModule.bindString(propertyModule.objectProperty(salesOrder, 'status/description'), statusDescriptionNode2);
 
         // change status
         salesOrder.setStatus(statusLocked);
@@ -167,12 +167,12 @@ require(['lib/dobi', 'lib/list', 'lib/property'], function (dobi, listLib, prope
         // transformation model item -> view item
         var trans = function (item, parentNode, refNode) {
             var liNode = document.createElement('li');
-            dobi.insertNode(liNode, parentNode, refNode);
+            bindingModule.insertNode(liNode, parentNode, refNode);
             liNode.appendChild(document.createTextNode(item.value()));
         };
 
         // bind model to view
-        dobi.bindList(propertyModule.property(salesOrder, 'items'), listNode, trans);
+        bindingModule.bindList(propertyModule.objectProperty(salesOrder, 'items'), listNode, trans);
 
         // modify list
         salesOrder.items.push('iWatch');
@@ -191,7 +191,7 @@ require(['lib/dobi', 'lib/list', 'lib/property'], function (dobi, listLib, prope
         helper.heading('Bind Object Property to Dom');
 
         // run template parser (for parsing the status template)
-        dobi.run(window, document.getElementById('templates'));
+        bindingModule.run(window, document.getElementById('templates'));
 
         // -------------------------------------------------------------------
         // model
@@ -238,7 +238,7 @@ require(['lib/dobi', 'lib/list', 'lib/property'], function (dobi, listLib, prope
 
             // container
             var containerNode = document.createElement('div');
-            dobi.insertNode(containerNode, parentNode, refNode);
+            bindingModule.insertNode(containerNode, parentNode, refNode);
 
             // heading
             var headingNode = document.createElement('h2');
@@ -246,7 +246,7 @@ require(['lib/dobi', 'lib/list', 'lib/property'], function (dobi, listLib, prope
             headingNode.appendChild(document.createTextNode('Sales Order'));
             var idHeading = document.createTextNode('');
             headingNode.appendChild(idHeading);
-            dobi.bindString(salesOrderProperty.resolve('id'), idHeading);
+            bindingModule.bindString(salesOrderProperty.resolve('id'), idHeading);
 
             // table
             var table = document.createElement('table');
@@ -255,26 +255,26 @@ require(['lib/dobi', 'lib/list', 'lib/property'], function (dobi, listLib, prope
             // id
             var idNode = helper.createInputField(table, 'id:');
             var idProperty = salesOrderProperty.resolve('id');
-            dobi.bindString(idProperty, idNode);
+            bindingModule.bindString(idProperty, idNode);
 
             //owner
             var ownerNode = helper.createInputField(table, 'owner:');
             var ownerProperty = salesOrderProperty.resolve('owner');
-            dobi.bindString(ownerProperty, ownerNode);
+            bindingModule.bindString(ownerProperty, ownerNode);
 
             // description
             var descriptionNode = helper.createInputField(table, 'description:');
             var descriptionProperty = salesOrderProperty.resolve('description');
-            dobi.bindString(descriptionProperty, descriptionNode);
+            bindingModule.bindString(descriptionProperty, descriptionNode);
 
             // status
-            dobi.bindObject(salesOrderProperty.resolve('status'), containerNode, dobi.transformations.status);
+            bindingModule.bindObject(salesOrderProperty.resolve('status'), containerNode, bindingModule.transformations.status);
 
             // items
             var itemsNode = document.createElement('ul');
             containerNode.appendChild(itemsNode);
             var itemsProperty = salesOrderProperty.resolve('items');
-            dobi.bindList(itemsProperty, itemsNode, itemsTrans);
+            bindingModule.bindList(itemsProperty, itemsNode, itemsTrans);
 
             // add button
             var addButton = document.createElement('button');
@@ -295,15 +295,15 @@ require(['lib/dobi', 'lib/list', 'lib/property'], function (dobi, listLib, prope
         // -------------------------------------------------------------------
         var itemsTrans = function (itemProperty, parentNode, refNode) {
             var liNode = document.createElement('li');
-            dobi.insertNode(liNode, parentNode, refNode);
+            bindingModule.insertNode(liNode, parentNode, refNode);
 
             var posNode = document.createElement('span');
             liNode.appendChild(posNode);
-            dobi.bindString(itemProperty.resolve('pos'), posNode);
+            bindingModule.bindString(itemProperty.resolve('pos'), posNode);
 
             var descriptionNode = document.createElement('input');
             liNode.appendChild(descriptionNode);
-            dobi.bindString(itemProperty.resolve('description'), descriptionNode);
+            bindingModule.bindString(itemProperty.resolve('description'), descriptionNode);
 
             var delButton = document.createElement('button');
             liNode.appendChild(delButton);
@@ -323,12 +323,12 @@ require(['lib/dobi', 'lib/list', 'lib/property'], function (dobi, listLib, prope
         // -------------------------------------------------------------------
         var salesOrderNode = document.createElement('div');
         document.body.appendChild(salesOrderNode);
-        dobi.bindObject(propertyModule.property(world, 'salesOrder'), salesOrderNode, salesOrderTrans);
+        bindingModule.bindObject(propertyModule.objectProperty(world, 'salesOrder'), salesOrderNode, salesOrderTrans);
 
 
         salesOrderNode = document.createElement('div');
         document.body.appendChild(salesOrderNode);
-        dobi.bindObject(propertyModule.property(world, 'salesOrder'), salesOrderNode, salesOrderTrans);
+        bindingModule.bindObject(propertyModule.objectProperty(world, 'salesOrder'), salesOrderNode, salesOrderTrans);
 
     };
 

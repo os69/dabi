@@ -4,8 +4,8 @@
 (function () {
 
     var define = window.define || function (deps, mod) {
-        window.dobiRoot = window.dobiRoot || {};
-        window.dobiRoot.eventing = mod();
+        window.dobi = window.dobi || {};
+        window.dobi.eventing = mod();
     };
 
     define([], function () {

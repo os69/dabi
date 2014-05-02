@@ -5,8 +5,8 @@
     "use strict";
 
     var define = window.define || function (deps, mod) {
-            window.dobiRoot = window.dobiRoot || {};
-            window.dobiRoot.list = mod();
+            window.dobi = window.dobi || {};
+            window.dobi.list = mod();
         };
 
     define([], function () {

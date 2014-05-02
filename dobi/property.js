@@ -4,11 +4,11 @@
 (function () {
 
     var define = window.define || function (deps, mod) {
-        window.dobiRoot = window.dobiRoot || {};
-        window.dobiRoot.property = mod(window.dobiRoot.eventing);
+        window.dobi = window.dobi || {};
+        window.dobi.property = mod(window.dobi.eventing);
     };
 
-    define(["lib/eventing"], function (eventingModule) {
+    define(["dobi/eventing"], function (eventingModule) {
 
         var module = {};
 

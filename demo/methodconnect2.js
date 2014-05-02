@@ -8,7 +8,7 @@ requirejs.config({
 });
 
 
-require(['lib/eventing'], function (eventing) {
+require(['dobi/eventing'], function (eventingModule) {
     "use strict";
 
     // model: create a list
@@ -26,7 +26,7 @@ require(['lib/eventing'], function (eventing) {
     };
     
     // connect model to view
-    eventing.connect(list,'push',listNode,'appendChild',trans);
+    eventingModule.connect(list,'push',listNode,'appendChild',trans);
     
     // fill the model list
     list.push('Hello');
