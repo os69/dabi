@@ -5,8 +5,8 @@
 /* global console */
 
 
-var propertyModule = window.dobiRoot.property;
-var eventingModule = window.dobiRoot.eventing;
+var propertyModule = window.dobi.property;
+var eventingModule = window.dobi.eventing;
 
 describe("Property Tests", function () {
 
@@ -382,10 +382,10 @@ describe("Property Tests", function () {
             items: [
                 {
                     pos: 10,
-                    tags:[1,2]
+                    tags: [1, 2]
                 }, {
                     pos: 20,
-                    tags:[3,4]
+                    tags: [3, 4]
                 }
             ]
         };
@@ -398,18 +398,33 @@ describe("Property Tests", function () {
 
         expect(p.value()).toBe(salesOrder.items[0].tags);
         expect(p.pathParts[1].propertyName).toBe('0');
-        
+
         prepareEvent();
-        salesOrder.items.splice(0,0,{pos:5});
+        salesOrder.items.splice(0, 0, {
+            pos: 5
+        });
         expect(event.message.type).toBe(propertyModule.PROP_EVENT_TYPE_UPDATE_LIST_INDEX);
         expect(p.pathParts[1].propertyName).toBe('1');
-        
+
         prepareEvent();
         var scounter1 = eventingModule.scounter;
-        p.set([10,20]);
+        p.set([10, 20]);
         expect(eventingModule.scounter).toBe(scounter1);
         expect(event.message.type).toBe(propertyModule.PROP_EVENT_TYPE_CHANGE);
-        
+
+        var items = [{
+            pos: 100,
+            tags: [10, 20]
+            }, {
+            pos: 200,
+            tags: [30, 40]
+            }];
+        prepareEvent();
+        salesOrder.setItems(items);
+        expect(event.message.type).toBe(propertyModule.PROP_EVENT_TYPE_CHANGE);
+        expect(p.value()).toBe(items[1].tags);
+        expect(eventingModule.scounter).toBe(scounter1);
+
         unSubscribe();
         expect(eventingModule.scounter).toBe(scounter);
 
