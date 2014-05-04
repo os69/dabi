@@ -18,3 +18,8 @@ h2{
 body{
     font-family: 'Droid Serif', serif;
 }
+
+pre.prettyprint{
+    border-width: 0;
+    background-color: #eeeeee;
+}

@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>Doc</title>
-   
+
     <script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>
     <link rel="stylesheet" type="text/css" href="doc.css">
 </head>
@@ -12,37 +12,144 @@
 <body>
 
     <div class="content">
-        
+
         <h1>Introduction</h1>
-        
-        Goals
-        
-        <h1>Using the Library</h1>
+        <b>dobi</b> (dombinding) is a javascript data binding library for building HTML5 user interfaces. Data binding connects javascript artifacts (objects, properties of objects, lists) with their UI counterparts. For instance a javascript list ['Hello','World!']may be represtend in the DOM by a corresponding list
         <pre class="prettyprint">
-&lt;script src=&quot;../tp/require.js&quot; data-main=&quot;binding&quot;&gt;&lt;/script&gt;        
-        </pre>
+&lt;ul&gt;
+    &lt;li&gt;Hello&lt;/li&gt;
+    &lt;li&gt;World!&lt;/li&gt;
+&lt;/ul&gt;</pre>
+        Data binding does mean that when the javascript list is changed then the UI list reflects the change. 
+        Databinding can be bidirectional: In case you have an input field in the UI entering values into the field can change an javascript object property.
+
+        <h1>Installation</h1>
+        Download the
+        <a href="https://github.com/os69/dabi/archive/newproperty.zip">archive</a> or just the minified javascript library
+        <a href="https://raw.githubusercontent.com/os69/dabi/newproperty/rel/dobi.min.js">dobi.min.js</a>. Put the sources in the WWW folder of your webserver.
+
+        <h1>Using</h1>
+
+        <h2>Minified Javascript</h2>
+        Include the minfied javascript library into your HTML document:
+
+        <pre class="prettyprint">
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+
+&lt;head&gt;
+    &lt;meta charset=&quot;utf-8&quot;&gt;
+    &lt;script src=&quot;../rel/dobi.min.js&quot;&gt;&lt;/script&gt;
+    &lt;title&gt;Hello World&lt;/title&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+
+    &lt;div id=&quot;templates&quot;&gt;
+        &lt;div data-bind=&quot;data/data1&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;script&gt;
+        var data = {
+            data1: '4711'
+        };
+        dobi.binding.run(window, document.getElementById('templates'));
+    &lt;/script&gt;
+&lt;/body&gt;
+
+&lt;/html&gt;</pre>
+        
+        <h2>Uncompressed Javascript</h2>
+        
+<pre class="prettyprint">
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+
+&lt;head&gt;
+    &lt;meta charset=&quot;utf-8&quot;&gt;
+    &lt;script src=&quot;../dobi/eventing.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;../dobi/list.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;../dobi/property.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;../dobi/binding.js&quot;&gt;&lt;/script&gt;
+    &lt;title&gt;Hello World&lt;/title&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+
+    &lt;div id=&quot;templates&quot;&gt;
+        &lt;div data-bind=&quot;data/data1&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;script&gt;
+        var data = {
+            data1: '4711'
+        };
+        dobi.binding.run(window, document.getElementById('templates'));
+    &lt;/script&gt;
+&lt;/body&gt;
+
+&lt;/html&gt;</pre>
+
+
+        <h2>RequireJS</h2>
+        <pre class="prettyprint">
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+
+&lt;head&gt;
+    &lt;meta charset=&quot;utf-8&quot;&gt;
+    &lt;script src=&quot;../tp/require.js&quot;&gt;&lt;/script&gt;
+    &lt;title&gt;Hello World&lt;/title&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+
+
+    &lt;div id=&quot;output&quot;&gt;&lt;/div&gt;
+
+
+    &lt;script&gt;
+        requirejs.config({
+            baseUrl: '..',
+        });
+
+        require(['dobi/binding'], function (bindingModule) {
+
+            var data = {
+                data1: '4711'
+            };
+
+            bindingModule.bindString(data.data1, document.getElementById('output'));
+            
+        });
+    &lt;/script&gt;
+&lt;/body&gt;
+
+&lt;/html&gt;</pre>
+        
         <h1>Eventing</h1>
-        
+
         <pre class="prettyprint">
-eventingModule.subscribe(sender, 'ValueChangedSignal', receiver, receiver.handler1);
-        </pre>
         
+        eventingModule.subscribe(sender, 'ValueChangedSignal', receiver, receiver.handler1);
+        </pre>
+
         <h2>Basic Eventing</h2>
         <h2>Cleanup & Garbage Collection</h2>
         <h2>Anonymous </h2>
         <h2>Listening to Methods</h2>
         <h2>Connecting Methods</h2>
-        
+
         <h1>Dombinding</h1>
-        
+
         <h2>Bind Simple Types</h2>
         <h2>Bind Lists </h2>
-        <h2>Bind Objects </h2>        
+        <h2>Bind Objects </h2> 
         <h2>Javascript Transformations</h2>
         <h2>HTML Transformations</h2>
-        
-        
-        
+
+
+
     </div>
 
 </body>
