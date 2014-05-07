@@ -18,13 +18,13 @@
             baseUrl: '..',
         });
 
-        require(['dobi/binding'], function (bindingModule) {
+        require(['dobi/binding'], function (binding) {
 
             var data = {
                 data1: '4711'
             };
 
-            bindingModule.bindString(data.data1, document.getElementById('output'));
+            binding.bindString(data.data1, document.getElementById('output'));
             
         });
     </script>
