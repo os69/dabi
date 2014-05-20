@@ -120,6 +120,14 @@
         };
 
         // ===================================================================
+        // helper: convert obj to string
+        // ===================================================================        
+        module.toString = function (obj) {
+            if (module.getType(obj) !== 'simple') return JSON.stringify(obj);
+            return obj;
+        };
+
+        // ===================================================================
         // bind string
         // ===================================================================        
         module.bindString = function (property, node, trans1, trans2) {
@@ -139,7 +147,7 @@
 
         module.bindTextNode = function (property, node, trans1) {
             property = propertyModule.wrapAsProperty(property);
-            node.nodeValue = property.value();
+            node.nodeValue = module.toString(property.value());
             property.subscribe(node, function () {
                 node.nodeValue = property.value();
             });
@@ -147,7 +155,7 @@
 
         module.bindStringInput = function (property, node, trans1, trans2) {
             property = propertyModule.wrapAsProperty(property);
-            node.value = property.value();
+            node.value = module.toString(property.value());
             property.subscribe(node, function () {
                 node.value = property.value();
             });
@@ -158,7 +166,7 @@
 
         module.bindStringElement = function (property, node, trans1) {
             property = propertyModule.wrapAsProperty(property);
-            node.textContent = property.value();
+            node.textContent = module.toString(property.value());
             property.subscribe(node, function () {
                 node.textContent = property.value();
             });
@@ -567,7 +575,6 @@
                     } else {
                         // match
                         var bindProperty = this.resolveBinding(part);
-                        if (module.getType(bindProperty.value()) !== 'simple') continue;
                         cloneNode = document.createTextNode("");
                         module.bindString(bindProperty, cloneNode);
                     }
@@ -646,6 +653,11 @@
 
                 var trans = this.getTransformation(node);
 
+                if (!trans) {
+                    module.bindString(binding.property, cloneNode);
+                    return;
+                }
+                
                 switch (binding.type) {
                 case 'list':
                     module.bindList(binding.property, cloneNode, trans);
@@ -727,9 +739,12 @@
 
                 var moveUp = function (path) {
                     var parentLevel = 0;
-                    while (path.indexOf("../") === 0) {
+                    while (path.indexOf("..") === 0) {
                         parentLevel++;
-                        path = path.slice(3);
+                        if (path.indexOf("../") === 0)
+                            path = path.slice(3);
+                        else
+                            path = path.slice(2);
                     }
                     return {
                         parentLevel: parentLevel,
