@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="../../lib/jquery-1.7.2.min.js"></script>
+    <script src="../dobi/eventing.js"></script>
+    <script src="../dobi/property.js"></script>
+    <script src="../dobi/binding.js"></script>
+    <title>Binding</title>
+</head>
+
+<body>
+
+    <div id="templates">
+
+        <table data-bind="/lines">
+            <tr data-bind="/fields">
+                <td data-bind="../{.}"></td>                
+            </tr>            
+        </table>
+
+    </div>
+
+    <script>
+        var fields = ['f1', 'f2'];
+        var lines = [{
+            f1: 'Hello',
+            f2: 'Line1'
+        }, {
+            f1: 'Hello',
+            f2: 'Line2'
+        }];
+
+        dobi.binding.run(window, document.getElementById('templates'));
+    </script>
+
+</body>
+
+</html>
+

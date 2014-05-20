@@ -19,6 +19,61 @@
 
         var module = {};
 
+        // =======================================================================
+        // simple parser
+        // =======================================================================
+        module.parseGroups = function (text) {
+            var MATCH_OPEN_BRACE = 1;
+            var MATCH_CLOSE_BRACE = 2;
+            var OPEN_BRACE = '{';
+            var CLOSE_BRACE = '}';
+            var mode = MATCH_OPEN_BRACE;
+            var tokens = [];
+            var start = 0;
+            var braceCounter = 0;
+            for (var index = 0; index < text.length; index++) {
+                var char = text[index];
+                switch (mode) {
+                case MATCH_OPEN_BRACE:
+                    if (char === OPEN_BRACE) {
+                        braceCounter++;
+                        tokens.push({
+                            text: text.slice(start, index),
+                            type: 'text'
+                        });
+                        start = index + 1;
+                        mode = MATCH_CLOSE_BRACE;
+                    }
+                    break;
+                case MATCH_CLOSE_BRACE:
+                    if (char === OPEN_BRACE) {
+                        braceCounter++;
+                        continue;
+                    }
+                    if (char === CLOSE_BRACE) {
+                        braceCounter--;
+                        if (braceCounter < 0) throw "matching brace error";
+                        if (braceCounter > 0) continue;
+                        tokens.push({
+                            text: text.slice(start, index),
+                            type: 'gtext'
+                        });
+                        start = index + 1;
+                        mode = MATCH_OPEN_BRACE;
+                        continue;
+                    }
+                    break;
+                }
+            }
+            if (index > start) {
+                tokens.push({
+                    text: text.slice(start, index),
+                    type: 'text'
+                });
+            }
+            return tokens;
+        };
+
         // ===================================================================
         // start template processor
         // ===================================================================
@@ -349,7 +404,7 @@
         };
         window.dobi = window.dobi || {};
         window.dobi.script = module.script;
-        
+
         // ===================================================================
         // environment
         // ===================================================================        
@@ -638,7 +693,31 @@
                 return binding;
             },
 
+            resolveGroups: function (path) {
+                var texts = [];
+                var parts = module.parseGroups(path);
+                for (var i = 0; i < parts.length; ++i) {
+                    var part = parts[i];
+                    if (part.type === 'gtext') {
+                        var property = this.resolveBinding(part.text);
+                        texts.push(property.value());
+                    } else {
+                        texts.push(part.text);
+                    }
+                }
+                return texts.join('');
+            },
+
             resolveBinding: function (path) {
+
+                // resolve {} groups in path
+                var newPath = this.resolveGroups(path);
+
+                // resolve path
+                return this.doResolveBinding(newPath);
+            },
+
+            doResolveBinding: function (path) {
 
                 var self = this;
 

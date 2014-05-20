@@ -317,14 +317,12 @@ require(['dobi/binding', 'dobi/list', 'dobi/property'], function (bindingModule,
 
         };
 
-
         // -------------------------------------------------------------------
         // display sales order
         // -------------------------------------------------------------------
         var salesOrderNode = document.createElement('div');
         document.body.appendChild(salesOrderNode);
         bindingModule.bindObject(propertyModule.objectProperty(world, 'salesOrder'), salesOrderNode, salesOrderTrans);
-
 
         salesOrderNode = document.createElement('div');
         document.body.appendChild(salesOrderNode);
@@ -335,9 +333,11 @@ require(['dobi/binding', 'dobi/list', 'dobi/property'], function (bindingModule,
     // =======================================================================
     // start demos
     // =======================================================================
+
     listBinding1();
     stringBinding1();
     stringBinding2();
     listBinding2();
     objectBinding1();
+
 });
