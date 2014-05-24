@@ -25,8 +25,8 @@
         module.parseGroups = function (text) {
             var MATCH_OPEN_BRACE = 1;
             var MATCH_CLOSE_BRACE = 2;
-            var OPEN_BRACE = '{';
-            var CLOSE_BRACE = '}';
+            var OPEN_BRACE = '(';
+            var CLOSE_BRACE = ')';
             var mode = MATCH_OPEN_BRACE;
             var tokens = [];
             var start = 0;
@@ -210,6 +210,7 @@
         module.bindObject = function (property, node, trans, parameters) {
             property = propertyModule.wrapAsProperty(property);
             if (property.value() !== null) trans(property, node, null, parameters);
+            // for simple types the binding is done within the object template
             if (module.getType(property.value()) !== 'simple') property.subscribe(node, function () {
                 module.unbindChildren(node);
                 node.innerHTML = "";

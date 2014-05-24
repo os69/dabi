@@ -134,7 +134,9 @@
     
     root.dimensionDropdown = {
         valuePath: 'Name',
-        descriptionPath: 'Name'
+        descriptionPath: 'Name',
+        key: 'Name',
+        description : 'Name'
     };
 
     root.modelEditor = {

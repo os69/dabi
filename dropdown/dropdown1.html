@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="../dobi/eventing.js"></script>
+    <script src="../dobi/property.js"></script>
+    <script src="../dobi/binding.js"></script>
+    <title>Checkbox</title>
+</head>
+
+<body>
+
+    <div id="templates">
+
+        <div data-def-template="dropdown(entries,metadata)">
+            <select id="dropdown" data-bind="entries">
+                <option value="{{(metadata/key)}}">
+                    {{(metadata/description)}}
+                    <script>
+                        dobi.script(function (info) {
+                            var keyOptionProperty = info.resolve('(metadata/key)');
+                            var keyProperty = info.resolve('..');
+                            var setSelected = function () {
+                                if (keyOptionProperty.value() === keyProperty.value())
+                                    info.parentNode.setAttribute('selected', 'selected');
+                                else
+                                    info.parentNode.removeAttribute('selected');
+                            };
+                            setSelected();
+                            keyOptionProperty.subscribe(info.parentNode, setSelected);
+                            keyProperty.subscribe(info.parentNode, setSelected);
+                        });
+                    </script>
+                </option>
+            </select>
+            <script>
+                dobi.script(function (info) {
+                    var dropdown = info.getElementById('dropdown');
+                    dropdown.addEventListener('click', function () {
+                        info.resolve('.').set(dropdown.value);
+                    });
+                });
+            </script>
+        </div>
+
+
+        <div data-template="dropdown" data-bind="country" data-template-parameters="countries,countriesMeta"></div>
+        <div data-template="dropdown" data-bind="country" data-template-parameters="countries,countriesMeta"></div>
+
+        <button id="testButton">Click</button>
+        <script>
+            dobi.script(function (info) {
+                var testButton = info.getElementById('testButton');
+                testButton.addEventListener('click', function () {
+                    switch (testCounter) {
+                    case 0:
+                        window.setCountry('DE');
+                        break;
+                    case 1:
+                        countries[1].setKey('USX');
+                        break;
+                    }
+                    testCounter++;
+                });
+            });
+        </script>
+    </div>
+
+    <script>
+        var testCounter = 0;
+
+        var country = 'US';
+
+        var countries = [{
+            key: 'DE',
+            descr: 'Germany'
+        }, {
+            key: 'US',
+            descr: 'USA'
+        }];
+
+        var countriesMeta = {
+            key: 'key',
+            description: 'descr'
+        };
+
+        dobi.binding.run(window, document.getElementById('templates'));
+    </script>
+</body>
+
+</html>
+

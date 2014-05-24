@@ -1,60 +1,32 @@
 <div data-def-template="dropdown(entries,metadata)">
-
-    <select id="dropdown" data-bind="entries" class="form-control">
-        <option>
+    <select id="dropdown" data-bind="entries">
+        <option value="{{(metadata/key)}}">
+            {{(metadata/description)}}
             <script>
-                dobi.script(function(info) {
-
-                    var metadata = info.resolveValue('metadata');
-
-                    var selectedEntryProperty = info.resolve('../');
-                    var selectedValue = selectedEntryProperty.resolveValue(metadata.valuePath);
-
-                    var entryProperty = info.resolve('.');
-                    var value = entryProperty.resolveValue(metadata.valuePath);
-                    var description = entryProperty.resolveValue(metadata.descriptionPath);
-
-                    info.parentNode.setAttribute('value', value);
-                    info.parentNode.textContent = description;
-
-                    if (selectedEntryProperty.value() === entryProperty.value())
+                dobi.script(function (info) {
+                    var keyOptionProperty = info.resolve('(metadata/key)');
+                    var keyProperty = info.resolve('../(metadata/key)');
+                    if (keyOptionProperty.value() === keyProperty.value())
                         info.parentNode.setAttribute('selected', 'selected');
                     else
                         info.parentNode.removeAttribute('selected');
-
                 });
             </script>
         </option>
     </select>
-
     <script>
-        dobi.script(function(info) {
-
-            var metadata = info.resolveValue('metadata');
+        dobi.script(function (info) {
             var dropdown = info.getElementById('dropdown');
-            var entriesProperty = info.resolve('entries');
-            var selectedEntryProperty = info.resolve('.');
-
-            dropdown.addEventListener('click', function() {
-                for (var i = 0; i < entriesProperty.value().length; ++i) {
-                    var entryProperty = entriesProperty.resolve("" + i);
-                    var value = entryProperty.resolveValue(metadata.valuePath);
-                    if (value === dropdown.value) {
-                        selectedEntryProperty.set(entryProperty.value());
-                    }
-                }
-            });
-
-            selectedEntryProperty.subscribe(dropdown, function(event) {
-                for (var i = 0; i < dropdown.children.length; ++i) {
-                    var entryNode = dropdown.children.item(i);
-                    if (entryNode.value === event.message)
-                        entryNode.setAttribute('selected', 'selected');
-                    else
-                        entryNode.removeAttribute('selected');
-                }
+            var metadata = info.resolveValue('metadata');
+            dropdown.addEventListener('click', function () {
+                var entry = info.resolveValue('entries').filter(function (entry) {
+                    var p = dobi.property.objectProperty(entry, metadata.key);
+                    return p.value() === dropdown.value;
+                })[0];
+                info.resolve('.').set(entry);
             });
         });
+         // subscription to . is not necessary because the root dropdown div has a object binding to .
+         // (dropdown1: subscription to . is necessary because . is simple type, simple types never have object binding)
     </script>
-
 </div>
