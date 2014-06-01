@@ -205,17 +205,85 @@
         };
 
         // ===================================================================
+        // bind attribute of an object to css class dom element
+        // ===================================================================        
+        module.bindAttributeToCssClass = function (property, node, trans) {
+
+            var classMap = {};
+
+            var checkCssClass = function (node, classx) {
+                var r = new RegExp('(?:^|\\s)' + classx + '(?!\\S)');
+                return node.className.match(r);
+            };
+
+            var addCssClass = function (node, classx) {
+                if (checkCssClass(node, classx)) return;
+                node.className += ' ' + classx;
+            };
+
+            var removeCssClass = function (node, classx) {
+                if (!checkCssClass(node, classx)) return;
+                var r = new RegExp('(?:^|\\s)' + classx + '(?!\\S)', 'g');
+                node.className = node.className.replace(r, '');
+            };
+
+            var bind = function () {
+                var val = trans ? trans(property.value()) : property.value();
+                var classes = val.split(' ');
+                for (var classx in classMap) {
+                    if (classMap[classx]) {
+                        if (classes.indexOf(classx) < 0) {
+                            classMap[classx] = false;
+                            removeCssClass(node, classx);
+                        }
+                    }
+                }
+                for (var i = 0; i < classes.length; ++i) {
+                    classx = classes[i];
+                    if (!classMap[classx]) {
+                        classMap[classx] = true;
+                        addCssClass(node, classx);
+                    }
+                }
+            };
+
+            bind();
+
+            property.subscribe(node, function () {
+                bind();
+            });
+
+        };
+
+        // ===================================================================
         // bind object
         // ===================================================================        
         module.bindObject = function (property, node, trans, parameters) {
+
             property = propertyModule.wrapAsProperty(property);
-            if (property.value() !== null) trans(property, node, null, parameters);
-            // for simple types the binding is done within the object template
-            if (module.getType(property.value()) !== 'simple') property.subscribe(node, function () {
+
+            var getTrans = function () {
+                if (trans instanceof propertyModule.Property)
+                    return module.transformations[trans.value()];
+                else
+                    return trans;
+            };
+
+            var bind = function () {
                 module.unbindChildren(node);
                 node.innerHTML = "";
-                if (property.value() !== null) trans(property, node, null, parameters);
-            });
+                var t = getTrans();
+                if (property.value() !== null) t(property, node, null, parameters);
+            };
+
+            // register for property change
+            // for simple types the binding is done within the object template
+            if (module.getType(property.value()) !== 'simple') property.subscribe(node, bind);
+
+            // register for change of transforation name
+            if (trans instanceof propertyModule.Property) trans.subscribe(node, bind);
+
+            bind();
         };
 
         // ===================================================================
@@ -598,6 +666,10 @@
                     var property = this.resolveBinding(bindName);
                     if (module.getType(property.value()) !== 'simple') return;
                     var attrName;
+                    if (attribute.name === 'data-class') {
+                        module.bindAttributeToCssClass(property, cloneNode);
+                        continue;
+                    }
                     if (cloneNode.tagName === 'IMG' && attribute.name === 'data-src') {
                         cloneNode.removeAttribute(attribute.name);
                         attrName = 'src';
@@ -658,7 +730,7 @@
                     module.bindString(binding.property, cloneNode);
                     return;
                 }
-                
+
                 switch (binding.type) {
                 case 'list':
                     module.bindList(binding.property, cloneNode, trans);
@@ -806,7 +878,15 @@
             getTransformation: function (node) {
                 if (node.hasAttribute('data-template')) {
                     var transformationName = node.getAttribute('data-template');
-                    return module.transformations[transformationName];
+                    var r = new RegExp("{{([^}]+)}}");
+                    var match = r.exec(transformationName);
+                    if (match) {
+                        var bindName = match[1];
+                        var property = this.resolveBinding(bindName);
+                        return property;
+                    } else {
+                        return module.transformations[transformationName];
+                    }
                 } else {
                     if (node.childNodes.length > 0)
                         return module.parseTransformationFromTemplate(node, this.env);
