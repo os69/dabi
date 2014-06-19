@@ -655,28 +655,65 @@
                 return true;
             },
 
+            processElementAttribute: function (attribute, cloneNode) {
+
+                // split attribute value into parts and create property for part
+                var parts = attribute.value.split(new RegExp("{{([^}]+)}}"));
+                var properties = [];
+                for (var i = 0; i < parts.length; i++) {
+                    var part = parts[i];
+                    if (i % 2 === 0) {
+                        // no match -> simple string value -> create static string property
+                        if (part.length === 0) continue;
+                        properties.push(propertyModule.staticProperty(part));
+                    } else {
+                        // match -> resolve binding
+                        properties.push(this.resolveBinding(part));
+                    }
+                }
+
+                // no properties -> return
+                if (properties.length === 0) return;
+
+                // if only one property use this one for binding otherwise create calculated property 
+                var property;
+                if (properties.length === 1) {
+                    property = properties[0];
+                    if (property.type === propertyModule.PROPERTY_TYPE_STATIC) return;
+                } else {
+                    property = propertyModule.calculatedProperty(function () {
+                        var result = "";
+                        for (var j = 0; j < properties.length; ++j) {
+                            var prop = properties[j];
+                            result += prop.value();
+                        }
+                        return result;
+                    }, properties);
+                }
+
+                // bind css class attribute
+                if (attribute.name === 'data-class') {
+                    module.bindAttributeToCssClass(property, cloneNode);
+                    return;
+                }
+                
+                // bind addtribute
+                var attrName;
+                if (cloneNode.tagName === 'IMG' && attribute.name === 'data-src') {
+                    cloneNode.removeAttribute(attribute.name);
+                    attrName = 'src';
+                } else {
+                    attrName = attribute.name;
+                }
+                module.bindAttributeToElementAttribute(property, attrName, cloneNode);
+
+            },
+
             processElementAttributes: function (cloneNode) {
                 if (!cloneNode.hasAttribute) return;
-                var matcher = new RegExp("{{(.*)}}");
                 for (var i = 0; i < cloneNode.attributes.length; i++) {
                     var attribute = cloneNode.attributes.item(i);
-                    var match = matcher.exec(attribute.value);
-                    if (!match) continue;
-                    var bindName = match[1];
-                    var property = this.resolveBinding(bindName);
-                    if (module.getType(property.value()) !== 'simple') return;
-                    var attrName;
-                    if (attribute.name === 'data-class') {
-                        module.bindAttributeToCssClass(property, cloneNode);
-                        continue;
-                    }
-                    if (cloneNode.tagName === 'IMG' && attribute.name === 'data-src') {
-                        cloneNode.removeAttribute(attribute.name);
-                        attrName = 'src';
-                    } else {
-                        attrName = attribute.name;
-                    }
-                    module.bindAttributeToElementAttribute(property, attrName, cloneNode);
+                    this.processElementAttribute(attribute, cloneNode);
                 }
             },
 
@@ -688,7 +725,7 @@
                     parentNode: targetParentNode,
                     refNode: targetRefNode,
                     getElementById: function (id) {
-                        return document.getElementById(id + "#" + this.env.data.transId);
+                        return document.getElementById(id + "_" + this.env.data.transId);
                     },
                     resolve: function (path) {
                         return self.resolveBinding(path);
@@ -697,9 +734,6 @@
                         return this.resolve(path).value();
                     }
                 };
-                //module.scriptInfo = info;
-                // eval(node.textContent);
-                //module.scriptInfo = null;
                 node.templateScript.apply(node, [info]);
                 return true;
             },
@@ -712,7 +746,7 @@
 
                 var cloneNode = node.cloneNode(false);
                 if (cloneNode.hasAttribute && cloneNode.hasAttribute('id'))
-                    cloneNode.setAttribute('id', cloneNode.getAttribute('id') + '#' + this.env.data.transId);
+                    cloneNode.setAttribute('id', cloneNode.getAttribute('id') + '_' + this.env.data.transId);
                 this.processElementAttributes(cloneNode);
                 module.insertNode(cloneNode, targetParentNode, targetRefNode);
 

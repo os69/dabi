@@ -1,0 +1,57 @@
+<!doctype html>
+<html class="no-js" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Foundation | Welcome</title>
+    <link rel="stylesheet" href="../tp/foundation/css/foundation.css" />
+    <script src="../tp/foundation/js/vendor/modernizr.js"></script>
+    <script src="../tp/foundation/js/vendor/jquery.js"></script>
+    <script src="../tp/foundation/js/foundation.min.js"></script>
+    <script src="../dobi/eventing.js"></script>
+    <script src="../dobi/property.js"></script>
+    <script src="../dobi/binding.js"></script>
+</head>
+
+<body>
+
+    <div id="templates">
+
+        <div class="row">
+            <div class="large-12 columns">
+
+                <h1>Welcome to Foundation</h1>
+
+                <select>
+                    <option>A</option>
+                    <option>B</option>
+                </select>
+
+
+                <a href="#" data-dropdown="drop1_{{transId}}" class="button dropdown">Dropdown Button</a>
+                <br>
+                <ul id="drop1" data-dropdown-content class="f-dropdown" data-bind="elements">
+                    <li><a href="#">{{.}}</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="target"></div>
+
+    <script>
+        var obj = {
+            value1: 'test1',
+            value2: 'test2'
+        }
+        var elements = ['1', '2', '3'];
+        dobi.binding.run(window, document.getElementById('templates'), document.getElementById('target'));
+        $(document).foundation();
+    </script>
+
+</body>
+
+</html>

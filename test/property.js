@@ -430,5 +430,41 @@ describe("Property Tests", function () {
 
     });
 
+    // =======================================================================
+    // Calculated property
+    // =======================================================================
 
+    it("Calculated Property", function () {
+
+        var scounter = eventingModule.scounter;
+        
+        var obj = {
+            value1: 1,
+            value2: 2
+        };
+
+        var p1 = new propertyModule.Property({
+            object: obj,
+            path: "value1"
+        });
+        var p2 = new propertyModule.Property({
+            object: obj,
+            path: "value2"
+        });
+
+        var c = new propertyModule.CalculatedProperty(function () {
+            return p1.value() + p2.value();
+        }, [p1, p2]);
+
+        expect(c.value()).toBe(3);
+        subscribe(c);
+        prepareEvent();
+        obj.setValue1(10);
+        expect(c.value()).toBe(12);
+        expect(event.message.value).toBe(12);
+        unSubscribe();
+
+        expect(eventingModule.scounter).toBe(scounter);
+        
+    });
 });

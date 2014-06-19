@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="../dobi/eventing.js"></script>
+    <script src="../dobi/property.js"></script>
+    <script src="../dobi/binding.js"></script>
+    <title>Attribute Test</title>
+</head>
+
+<body>
+
+    <div id="templates">
+
+        <div id="test" attribute="{{obj/value1}}xx{{obj/value2}}"></div>
+
+        <button id="do">
+            OK
+            <script>
+                dobi.script(function (info) {
+                    var counter = 0;
+                    info.parentNode.addEventListener('click', function () {
+                        switch (counter) {
+                        case 0:
+                            obj.setValue1('test10');
+                            break;
+                        case 1:
+                            obj.setValue2('test20');
+                            break;
+                        case 2:
+                            var div = info.getElementById('test');
+                            dobi.binding.unbind(div);
+                            div.parentNode.removeChild(div);
+                        };
+                        counter += 1;
+                    });
+                });
+            </script>
+        </button>
+
+    </div>
+
+    <script>
+        var obj = {
+            value1: 'test1',
+            value2: 'test2'
+        }
+        dobi.binding.run(window, document.getElementById('templates'));
+    </script>
+
+</body>
+
+</html>
+

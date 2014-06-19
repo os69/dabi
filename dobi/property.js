@@ -59,6 +59,7 @@
         // ===================================================================
         module.PROPERTY_TYPE_SIMPLE = 1;
         module.PROPERTY_TYPE_STATIC = 2;
+        module.PROPERTY_TYPE_CALC = 3;
 
         // ===================================================================
         // property events
@@ -107,11 +108,11 @@
                 return this.resolve(path).value();
             },
 
-            listIndex : function(){
-                var pathPart = this.pathParts[this.pathParts.length-1];
+            listIndex: function () {
+                var pathPart = this.pathParts[this.pathParts.length - 1];
                 return parseInt(pathPart.propertyName);
             },
-            
+
             pathParts: function (object, path) {
                 var parts = path.split('/');
                 var pathParts = [];
@@ -207,7 +208,7 @@
                     if (pathPart.object) this.listenToObject(pathPart);
                 }
 
-                pathPart = this.pathParts[this.pathParts.length-1];
+                pathPart = this.pathParts[this.pathParts.length - 1];
                 if (pathPart && pathPart.object) {
                     var value = pathPart.object[pathPart.propertyName];
                     if (module.isList(value)) {
@@ -401,10 +402,74 @@
             });
         };
 
+        module.calculatedProperty = function(calcFunction,dependendProperties){
+            return new module.CalculatedProperty(calcFunction,dependendProperties);    
+        };
+        
         module.wrapAsProperty = function (obj) {
             if (obj instanceof module.Property)
                 return obj;
             return module.staticProperty(obj);
+        };
+
+
+        // ===================================================================
+        // calculated property 
+        // ===================================================================
+        module.CalculatedProperty = function () {
+            this.init.apply(this, arguments);
+            this.type = module.PROPERTY_TYPE_CALC;
+            eventingModule.setAutoDelete(this, 0);
+        };
+
+        module.CalculatedProperty.prototype = {
+
+            init: function (calcFunction, dependendProperties) {
+                this.calcFunction = calcFunction;
+                this.dependendProperties = dependendProperties;
+                this.listening = false;
+                this.calculate();
+            },
+
+            get: function () {
+                return this.calculatedValue;
+            },
+
+            value: function () {
+                return this.calculatedValue;
+            },
+
+            calculate: function () {
+                this.calculatedValue = this.calcFunction();
+            },
+
+            afterDeleteSubscriptions: function () {
+                this.listening = false;
+            },
+
+            listen: function () {
+                for (var i = 0; i < this.dependendProperties.length; ++i) {
+                    var property = this.dependendProperties[i];
+                    property.subscribe(this, this.dependendChanged);
+                }
+            },
+
+            dependendChanged: function (event) {
+                this.calculate();
+                eventingModule.raiseEvent(this, 'propertyChanged', {
+                    value: this.calculatedValue,
+                    originalEvent: event
+                });
+            },
+
+            subscribe: function (obj, handler) {
+                if (!this.listening) this.listen();
+                eventingModule.subscribe(this, 'propertyChanged', obj, handler);
+            },
+
+            unSubscribe: function (obj, handler) {
+                eventingModule.unSubscribe(this, 'propertyChanged', obj, handler);
+            }
         };
 
         return module;
