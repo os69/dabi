@@ -273,7 +273,8 @@
                 module.unbindChildren(node);
                 node.innerHTML = "";
                 var t = getTrans();
-                if (property.value() !== null) t(property, node, null, parameters);
+                /*if (property.value() !== null)*/
+                t(property, node, null, parameters);
             };
 
             // register for property change
@@ -294,9 +295,21 @@
 
             var dummy = function () {};
 
+            var getTransItem = function () {
+                if (transItem instanceof propertyModule.Property)
+                    return module.transformations[transItem.value()];
+                else
+                    return transItem;
+            };
+
             var createItem = function (list, listIndex, parentNode, refNode) {
                 var elementProperty = propertyModule.listItemProperty(list, listIndex);
-                transItem(elementProperty, parentNode, refNode);
+                var t = getTransItem();
+                try {
+                    t(elementProperty, parentNode, refNode);
+                } catch (e) {
+                    throw e;
+                }
                 elementProperty.subscribe(parentNode.children.item(listIndex), dummy); // TODO
             };
 
@@ -349,6 +362,11 @@
                     }
                     break;
                 }
+            });
+            
+            // register for transformation change
+            if (transItem instanceof propertyModule.Property) transItem.subscribe(node, function(){
+                bind(property.value());
             });
 
         };
@@ -497,12 +515,18 @@
 
             push: function (data) {
                 this.stack.push(data);
+                this.adjustData();
+            },
+
+            adjustData: function () {
+                if (this.stack.length === 0) return;
                 this.data = this.stack[this.stack.length - 1];
             },
 
             clone: function () {
                 var env = new module.Environment();
                 env.stack = this.stack.slice(0);
+                env.adjustData();
                 return env;
             }
 
@@ -696,7 +720,7 @@
                     module.bindAttributeToCssClass(property, cloneNode);
                     return;
                 }
-                
+
                 // bind addtribute
                 var attrName;
                 if (cloneNode.tagName === 'IMG' && attribute.name === 'data-src') {
@@ -717,15 +741,16 @@
                 }
             },
 
-            processScript: function (node, targetParentNode, targetRefNode) {
+            createScriptInfo: function (targetNode, targetParentNode, targetRefNode) {
                 var self = this;
-                if (!node.tagName || node.tagName !== 'SCRIPT' || !node.templateScript) return false;
-                var info = {
-                    env: this.env,
+                return {
+                    env: self.env,
+                    node: targetNode,
                     parentNode: targetParentNode,
                     refNode: targetRefNode,
+                    self: self.env.data.self.value(),
                     getElementById: function (id) {
-                        return document.getElementById(id + "_" + this.env.data.transId);
+                        return document.getElementById(id + "_" + self.env.data.transId);
                     },
                     resolve: function (path) {
                         return self.resolveBinding(path);
@@ -734,8 +759,32 @@
                         return this.resolve(path).value();
                     }
                 };
+            },
+
+            processScript: function (node, targetParentNode, targetRefNode) {
+                var self = this;
+                if (!node.tagName || node.tagName !== 'SCRIPT' || !node.templateScript) return false;
+                var info = self.createScriptInfo(null, targetParentNode, targetRefNode);
                 node.templateScript.apply(node, [info]);
                 return true;
+            },
+
+            processEventScriptAttribute: function (attribute, cloneNode, targetParentNode, targetRefNode) {
+                var self = this;
+                var event = attribute.name.split('-')[2];
+                cloneNode.addEventListener(event, function (event) {
+                    var info = self.createScriptInfo(cloneNode, targetParentNode, targetRefNode);
+                    eval(attribute.value); // jshint ignore:line
+                });
+            },
+
+            processScriptAttributes: function (cloneNode, targetParentNode, targetRefNode) {
+                if (!cloneNode.hasAttribute) return;
+                for (var i = 0; i < cloneNode.attributes.length; i++) {
+                    var attribute = cloneNode.attributes.item(i);
+                    if (attribute.name.indexOf('data-event') >= 0)
+                        this.processEventScriptAttribute(attribute, cloneNode, targetParentNode, targetRefNode);
+                }
             },
 
             cloneNode: function (node, targetParentNode, targetRefNode) {
@@ -749,6 +798,7 @@
                     cloneNode.setAttribute('id', cloneNode.getAttribute('id') + '_' + this.env.data.transId);
                 this.processElementAttributes(cloneNode);
                 module.insertNode(cloneNode, targetParentNode, targetRefNode);
+                this.processScriptAttributes(cloneNode, targetParentNode, targetRefNode);
 
                 var binding = this.parseBindAttribute(node);
                 if (!binding) {

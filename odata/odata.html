@@ -1,43 +1,154 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html class="no-js" lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="../../lib/jquery-1.7.2.min.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Foundation | Welcome</title>
+    <link rel="stylesheet" href="../tp/foundation/css/foundation.css" />
+    <script src="../tp/foundation/js/vendor/modernizr.js"></script>
+    <script src="../tp/foundation/js/vendor/jquery.js"></script>
+    <script src="../tp/foundation/js/foundation.min.js"></script>
     <script src="../dobi/eventing.js"></script>
     <script src="../dobi/property.js"></script>
     <script src="../dobi/binding.js"></script>
-    <title>Binding</title>
+    <script src="../tp/datajs-1.1.2.js"></script>
 </head>
 
 <body>
 
     <div id="templates">
 
-        <table data-bind="/lines">
-            <tr data-bind="/fields">
-                <td data-bind=".."></td>                
-            </tr>            
-        </table>
+        <!-- ====================================================================== -->
+        <!-- checkbox -->
+        <!-- ====================================================================== -->
+        <div data-def-template="dropdown(entries,metadata)">
+            <select id="dropdown" data-bind="entries">
+                <option value="{{(metadata/key)}}">
+                    {{(metadata/description)}}
+                    <script>
+                        dobi.script(function (info) {
+                            var keyOptionProperty = info.resolve('(metadata/key)');
+                            var keyProperty = info.resolve('../(metadata/key)');
+                            if (keyOptionProperty.value() === keyProperty.value())
+                                info.parentNode.setAttribute('selected', 'selected');
+                            else
+                                info.parentNode.removeAttribute('selected');
+                        });
+                    </script>
+                </option>
+            </select>
+            <script>
+                dobi.script(function (info) {
+                    var dropdown = info.getElementById('dropdown');
+                    var metadata = info.resolveValue('metadata');
+                    dropdown.addEventListener('click', function () {
+                        var entry = info.resolveValue('entries').filter(function (entry) {
+                            var p = dobi.property.objectProperty(entry, metadata.key);
+                            return p.value() === dropdown.value;
+                        })[0];
+                        info.resolve('.').set(entry);
+                    });
+                });
+                 // subscription to . is not necessary because the root dropdown div has a object binding to .
+                 // (dropdown1: subscription to . is necessary because . is simple type, simple types never have object binding)
+            </script>
+        </div>
+
+        <!-- ====================================================================== -->
+        <!-- service -->
+        <!-- ====================================================================== -->
+        <div class="row">
+            <div class="large-12 columns">
+                <h1>Service</h1>
+                <label>Service URL
+                    <input type="text" placeholder="URL" data-bind="serviceUrl" />
+                </label>
+                <button class="tiny" data-event-click="info.self.load()">Load</button>
+            </div>
+        </div>
+
+        <!-- ====================================================================== -->
+        <!-- entity set -->
+        <!-- ====================================================================== -->
+        <div class="row">
+            <div class="large-12 columns">
+                <h1>EntitySet</h1>
+                <div data-template="dropdown" data-bind="entitySet" data-template-parameters="entitySets,entitySetsMeta"></div>
+            </div>
+        </div>
+
+        <!-- ====================================================================== -->
+        <!-- metadata -->
+        <!-- ====================================================================== -->
+        <div class="row">
+            <h1>Metadata</h1>
+        </div>
+        <div class="row">
+            <div class="large-6 columns">
+                <h2>Fields</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="entityType/property">
+                        <tr>
+                            <td data-bind="name"></td>
+                            <td data-bind="type"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="large-6 columns">
+                <h2>Links</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="entityType/navigationProperty">
+                        <tr>
+                            <td data-bind="name"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ====================================================================== -->
+        <!-- objects -->
+        <!-- ====================================================================== -->
+        <div class="row">
+            <h1>Objects</h1>
+            <button class="tiny" data-event-click="info.self.loadObjects()">Load</button>
+            <div data-def-template="simpleField">{{.}}</div>
+            <div data-def-template="links">
+                <a href="{{uri}}" data-event-click="model.navigate(event,info.self)">{{name}}</a>
+            </div>
+            <table>
+                <thead>
+                    <tr data-bind="/objectFields">
+                        <td data-bind="name"></td>
+                    </tr>
+                </thead>
+                <tbody data-bind="objects">
+                    <tr data-bind="/objectFields">
+                        <td data-bind="../(./name)" data-template="{{./template}}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
     </div>
 
-    <script>
-        var fields = ['f1', 'f2'];
-        var lines = [{
-            f1: 'Hello',
-            f2: 'Line1'
-        }, {
-            f1: 'Hello',
-            f2: 'Line2'
-        }];
+    <div id="target"></div>
 
-        dobi.binding.run(window, document.getElementById('templates'));
-    </script>
+    <script src="odata.js"></script>
 
 </body>
 
 </html>
-
