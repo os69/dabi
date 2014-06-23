@@ -7,14 +7,37 @@
 
 (function () {
 
+    var ODataService = function () {
+        this.init.apply(this, arguments);
+    };
+
+    ODataService.prototype = {
+
+        init: function (serviceUrl) {
+            this.serviceUrl = serviceUrl;
+        },
+
+        loadMetadata: function () {
+            var self = this;
+            var deferred = $.Deferred();
+            OData.read(this.serviceUrl + '/$metadata', function (data) {
+                self.metadata = data;
+                self.entityTypes = self.metadata.dataServices.schema[0].entityType;
+                self.entitySets = self.metadata.dataServices.schema[1].entityContainer[0].entitySet;
+                deferred.resolve();
+            }, function (error) {
+                alert(error);
+                deferred.reject(error);
+            }, OData.metadataHandler);
+            return deferred;
+        }
+    };
 
     var model = window.model = {
 
         serviceUrl: '/V3/Northwind/Northwind.svc',
 
-        metadata: null,
-
-        entitySet: null,
+        entitySetName: null,
         entitySets: [],
         entitySetsMeta: {
             key: 'entityType',
@@ -31,15 +54,11 @@
 
         load: function () {
             var self = this;
-            OData.read(
-                this.serviceUrl + '/$metadata',
-                function (data) {
-                    self.metadata = data;
-                    self.setEntitySets(data.dataServices.schema[1].entityContainer[0].entitySet);
-                    self.setEntitySet(self.entitySets[0]);
-                }, function (error) {
-                    alert(error);
-                }, OData.metadataHandler);
+            this.oDataService = new ODataService(this.serviceUrl);
+            this.oDataService.loadMetadata().done(function () {
+                self.setEntitySets(self.oDataService.entitySets);
+                self.setEntitySetName(self.oDataService.entitySets[0].name);
+            });
         },
 
         getEntityType: function (entityTypeName) {
@@ -121,11 +140,11 @@
 
             // normalize objects
             var objects;
-            if (data.results) 
+            if (data.results)
                 objects = data.results;
-            else 
+            else
                 objects = [data];
-            
+
             // set objects
             $.each(objects, function (i, obj) {
                 obj.Links = [];
