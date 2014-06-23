@@ -22,33 +22,49 @@
             var deferred = $.Deferred();
             OData.read(this.serviceUrl + '/$metadata', function (data) {
                 self.metadata = data;
-                self.entityTypes = self.metadata.dataServices.schema[0].entityType;
-                self.entitySets = self.metadata.dataServices.schema[1].entityContainer[0].entitySet;
+                self.entityTypesMetadata = self.metadata.dataServices.schema[0].entityType;
+                self.entitySetsMetadata = self.metadata.dataServices.schema[1].entityContainer[0].entitySet;
                 deferred.resolve();
             }, function (error) {
                 alert(error);
                 deferred.reject(error);
             }, OData.metadataHandler);
             return deferred;
+        },
+
+        getEntitySetMetadata: function (entitySet) {
+            for (var i = 0; i < this.entitySetsMetadata.length; ++i) {
+                var entitySetMetadata = this.entitySetsMetadata[i];
+                if (entitySetMetadata.name === entitySet) return entitySetMetadata;
+            }
+        },
+
+        getEntityTypeMetadata: function (entityType) {
+            for (var i = 0; i < this.entityTypesMetadata.length; ++i) {
+                var entityTypeMetadata = this.entityTypesMetadata[i];
+                if (entityTypeMetadata.name === entityType) return entityTypeMetadata;
+            }
         }
+
     };
 
     var model = window.model = {
 
         serviceUrl: '/V3/Northwind/Northwind.svc',
 
-        entitySetName: null,
-        entitySets: [],
-        entitySetsMeta: {
-            key: 'entityType',
+        entitySet: null,
+        entitySetsMetadata: [],
+        entitySetsMetadataCheckbox: {
+            key: 'name',
             description: 'name'
         },
 
-        entityType: {
+        entityTypeMetadata: {
             property: [],
             navigationProperty: []
         },
 
+        
         objects: [],
         objectFields: [],
 
@@ -56,22 +72,17 @@
             var self = this;
             this.oDataService = new ODataService(this.serviceUrl);
             this.oDataService.loadMetadata().done(function () {
-                self.setEntitySets(self.oDataService.entitySets);
-                self.setEntitySetName(self.oDataService.entitySets[0].name);
+                self.setEntitySetsMetadata(self.oDataService.entitySetsMetadata);
+                self.setEntitySet(self.oDataService.entitySetsMetadata[0].name);
             });
         },
 
-        getEntityType: function (entityTypeName) {
-            var entityType, found = false;
-            for (var i = 0; i < this.metadata.dataServices.schema[0].entityType.length; ++i) {
-                entityType = this.metadata.dataServices.schema[0].entityType[i];
-                if (entityType.name === entityTypeName) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) return null;
-            return entityType;
+        setEntitySet: function (entitySet) {
+            this.entitySet = entitySet;
+            var entitySetMetadata = this.oDataService.getEntitySetMetadata(entitySet);
+            var entityType = entitySetMetadata.entityType.split('.')[1];
+            var entityTypeMetadata = this.oDataService.getEntityTypeMetadata(entityType);
+            this.setEntityTypeMetadata(entityTypeMetadata);
         },
 
         navigate: function (event, link) {
@@ -81,7 +92,7 @@
             event.preventDefault();
 
             // new entity set
-            self.setEntitySet(this.getEntitySet(link.toRole));
+            self.setEntitySet(link.toRole);
 
             // get path (remove server prefix from uri)
             var parser = document.createElement('a');
@@ -95,23 +106,9 @@
 
         },
 
-        getEntitySet: function (entitySetName) {
-            for (var i = 0; i < this.metadata.dataServices.schema[1].entityContainer[0].entitySet.length; ++i) {
-                var entitySet = this.metadata.dataServices.schema[1].entityContainer[0].entitySet[i];
-                if (entitySet.name === entitySetName) return entitySet;
-            }
-            return null;
-        },
-
-        setEntitySet: function (entitySet) {
-            var self = this;
-            this.entitySet = entitySet;
-            self.setEntityType(self.getEntityType(entitySet.entityType.split('.')[1]));
-        },
-
         loadObjects: function () {
             var self = this;
-            OData.read(this.serviceUrl + '/' + this.entitySet.name, function (data) {
+            OData.read(this.serviceUrl + '/' + this.entitySet, function (data) {
                 self.setData(data);
             }, function (error) {
                 alert(error);
@@ -125,7 +122,7 @@
             self.setObjects([]);
 
             // set object fields
-            var objectFields = self.entityType.property.slice().filter(function (entityType, i) {
+            var objectFields = self.entityTypeMetadata.property.slice().filter(function (entityType, i) {
                 return entityType.type !== 'Edm.Binary' && i < 10;
             });
             for (var i = 0; i < objectFields.length; ++i) {
@@ -148,7 +145,7 @@
             // set objects
             $.each(objects, function (i, obj) {
                 obj.Links = [];
-                $.each(self.entityType.navigationProperty, function (i, navigationProperty) {
+                $.each(self.entityTypeMetadata.navigationProperty, function (i, navigationProperty) {
                     obj.Links.push({
                         name: navigationProperty.name,
                         uri: obj[navigationProperty.name].__deferred.uri,

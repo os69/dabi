@@ -72,8 +72,75 @@
         <div class="row">
             <div class="large-12 columns">
                 <h1>EntitySet</h1>
-                <div data-template="dropdown" data-bind="entitySetName" data-template-parameters="entitySets,entitySetsMeta"></div>
+                <div data-template="dropdown" data-bind="entitySet" data-template-parameters="entitySetsMetadata,entitySetsMetadataCheckbox">
+                </div>
             </div>
+        </div>
+
+
+        <!-- ====================================================================== -->
+        <!-- metadata -->
+        <!-- ====================================================================== -->
+        <div class="row">
+            <h1>Metadata</h1>
+        </div>
+        <div class="row">
+            <div class="large-6 columns">
+                <h2>Fields</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="entityTypeMetadata/property">
+                        <tr>
+                            <td data-bind="name"></td>
+                            <td data-bind="type"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="large-6 columns">
+                <h2>Links</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="entityTypeMetadata/navigationProperty">
+                        <tr>
+                            <td data-bind="name"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ====================================================================== -->
+        <!-- objects -->
+        <!-- ====================================================================== -->
+        <div class="row">
+            <h1>Objects</h1>
+            <button class="tiny" data-event-click="info.self.loadObjects()">Load</button>
+            <div data-def-template="simpleField">{{.}}</div>
+            <div data-def-template="links">
+                <a href="{{uri}}" data-event-click="model.navigate(event,info.self)">{{name}}</a>
+            </div>
+            <table>
+                <thead>
+                    <tr data-bind="/objectFields">
+                        <td data-bind="name"></td>
+                    </tr>
+                </thead>
+                <tbody data-bind="objects">
+                    <tr data-bind="/objectFields">
+                        <td data-bind="../(./name)" data-template="{{./template}}"></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
     </div>
