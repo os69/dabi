@@ -7,6 +7,10 @@
 
 (function () {
 
+    // ======================================================================= 
+    // OData service
+    // ======================================================================= 
+
     var ODataService = function () {
         this.init.apply(this, arguments);
     };
@@ -44,10 +48,28 @@
                 var entityTypeMetadata = this.entityTypesMetadata[i];
                 if (entityTypeMetadata.name === entityType) return entityTypeMetadata;
             }
+        },
+
+        getData: function (url) {
+            var deferred = $.Deferred();
+            OData.read(url, function (data) {
+                var objects;
+                if (data.results)
+                    objects = data.results;
+                else
+                    objects = [data];
+                deferred.resolve(objects);
+            }, function (error) {
+                deferred.reject(error);
+            });
+            return deferred;
         }
 
     };
 
+    // ======================================================================= 
+    // model
+    // ======================================================================= 
     var model = window.model = {
 
         serviceUrl: '/V3/Northwind/Northwind.svc',
@@ -64,9 +86,11 @@
             navigationProperty: []
         },
 
-        
         objects: [],
         objectFields: [],
+
+        detailObject: null,
+        detailObjectFields: [],
 
         load: function () {
             var self = this;
@@ -100,47 +124,49 @@
             var path = parser.pathname;
 
             // do odata call
-            OData.read(path, function (data) {
-                self.setData(data);
+            self.oDataService.getData(path).done(function (objects) {
+                self.setData(objects);
             });
 
         },
 
         loadObjects: function () {
             var self = this;
-            OData.read(this.serviceUrl + '/' + this.entitySet, function (data) {
-                self.setData(data);
-            }, function (error) {
-                alert(error);
+            self.oDataService.getData(this.serviceUrl + '/' + this.entitySet).done(function (objects) {
+                self.setData(objects);
             });
         },
 
-        setData: function (data) {
+        detail: function (object) {
+            this.detailObject = object; // don't use setter in order to prevent event
+            this.setDetailObjectFields(this.assembleFields(100, true));
+        },
+
+        assembleFields: function (numberColumns, flgLinks) {
+            var self = this;
+            var objectFields = self.entityTypeMetadata.property.slice().filter(function (entityType, i) {
+                return entityType.type !== 'Edm.Binary' && i < numberColumns;
+            });
+            for (var i = 0; i < objectFields.length; ++i) {
+                var field = objectFields[i];
+                field.template = 'simpleField';
+            }
+            if (flgLinks)
+                objectFields.push({
+                    name: 'Links',
+                    template: 'links'
+                });
+            return objectFields;
+        },
+
+        setData: function (objects) {
             var self = this;
 
             // clear objects
             self.setObjects([]);
 
             // set object fields
-            var objectFields = self.entityTypeMetadata.property.slice().filter(function (entityType, i) {
-                return entityType.type !== 'Edm.Binary' && i < 10;
-            });
-            for (var i = 0; i < objectFields.length; ++i) {
-                var field = objectFields[i];
-                field.template = 'simpleField';
-            }
-            objectFields.push({
-                name: 'Links',
-                template: 'links'
-            });
-            self.setObjectFields(objectFields);
-
-            // normalize objects
-            var objects;
-            if (data.results)
-                objects = data.results;
-            else
-                objects = [data];
+            self.setObjectFields(self.assembleFields(3, false));
 
             // set objects
             $.each(objects, function (i, obj) {
@@ -155,11 +181,15 @@
             });
             self.setObjects(objects);
 
+            // open detail
+            if (objects.length > 0)
+                self.detail(objects[0]);
+            else
+                self.setDetailObjectFields([]);
         }
     };
 
     dobi.binding.run(model, document.getElementById('templates'), document.getElementById('target'));
     $(document).foundation();
-
 
 })();

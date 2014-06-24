@@ -125,22 +125,41 @@
         <div class="row">
             <h1>Objects</h1>
             <button class="tiny" data-event-click="info.self.loadObjects()">Load</button>
-            <div data-def-template="simpleField">{{.}}</div>
-            <div data-def-template="links">
-                <a href="{{uri}}" data-event-click="model.navigate(event,info.self)">{{name}}</a>
+        </div>
+
+        <div data-def-template="simpleField">{{.}}</div>
+        <div data-def-template="links">
+            <a href="{{uri}}" data-event-click="model.navigate(event,info.self)">{{name}}</a>
+        </div>
+
+        <div class="row">
+
+            <div class="large-6 columns">
+                <table>
+                    <thead>
+                        <tr data-bind="objectFields">
+                            <td data-bind="name"></td>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="objects">
+                        <tr data-bind="/objectFields" data-event-click="model.detail(info.self)">
+                            <td data-bind="../(name)" data-template="{{template}}"></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <table>
-                <thead>
-                    <tr data-bind="/objectFields">
-                        <td data-bind="name"></td>
-                    </tr>
-                </thead>
-                <tbody data-bind="objects">
-                    <tr data-bind="/objectFields">
-                        <td data-bind="../(./name)" data-template="{{./template}}"></td>
-                    </tr>
-                </tbody>
-            </table>
+
+            <div class="large-6 columns">
+                <table data-bind="/detailObjectFields">
+                    <tbody>
+                        <tr>
+                            <td data-bind="name"></td>
+                            <td data-template="{{template}}" data-bind="/detailObject/(name)"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
         </div>
 
     </div>
