@@ -794,8 +794,12 @@
                 if (this.processScript(node, targetParentNode, targetRefNode)) return;
 
                 var cloneNode = node.cloneNode(false);
-                if (cloneNode.hasAttribute && cloneNode.hasAttribute('id'))
-                    cloneNode.setAttribute('id', cloneNode.getAttribute('id') + '_' + this.env.data.transId);
+                if (cloneNode.hasAttribute && cloneNode.hasAttribute('id')){
+                    var id = cloneNode.getAttribute('id');
+                    if(id.length>0 && id[0]!=='_')
+                        cloneNode.setAttribute('id', cloneNode.getAttribute('id') + '_' + this.env.data.transId);
+                }
+                    
                 this.processElementAttributes(cloneNode);
                 module.insertNode(cloneNode, targetParentNode, targetRefNode);
                 this.processScriptAttributes(cloneNode, targetParentNode, targetRefNode);

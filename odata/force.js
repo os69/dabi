@@ -2,6 +2,8 @@
 /* global alert */
 /* global window */
 /* global document */
+/* global dobi */
+/* global $ */
 
 (function () {
 
@@ -20,43 +22,51 @@
     // ======================================================================= 
     // create tree
     // =======================================================================     
-    var createTree = function (depth, numChilds) {
+    var createTree = function (nodeDisplay, depth, numChilds) {
 
         var nodes = [];
         var links = [];
 
-        var doCreate = function (d, parent) {
+        var doCreate = function (d, parentObj) {
             if (d === 0) return;
             for (var i = 0; i < numChilds; ++i) {
-                var node = {
-                    id: generateId(),
-                    x: 100,
-                    y: 100
-                };
-                nodes.push(node);
-                var link = {
-                    source: parent,
-                    target: node,
-                    id: generateId()
-                };
-                links.push(link);
-                doCreate(d - 1, node);
+                var childObj = generateId();
+                nodeDisplay.addNode(childObj);
+                nodeDisplay.addLink(parentObj, childObj);
+                doCreate(d - 1, childObj);
             }
         };
 
-        var root = {
-            x: 100,
-            y: 100,
-            id: generateId()
-        };
-        nodes.push(root);
-        doCreate(depth, root);
+        var rootObj = generateId();
+        nodeDisplay.addNode(rootObj);
+        doCreate(depth, rootObj);
 
-        return {
-            nodes: nodes,
-            links: links
-        };
+    };
 
+    // ======================================================================= 
+    // color map
+    // =======================================================================     
+    var ColorMap = function () {
+        this.init.apply(this, arguments);
+    };
+
+    ColorMap.prototype = {
+
+        colors: ['black', 'red', 'green', 'blue', 'yellow'],
+
+        init: function () {
+            this.map = {};
+            this.colorIndex = 0;
+        },
+
+        getColor: function (key) {
+            var color = this.map[key];
+            if (color) return color;
+            color = ColorMap.prototype.colors[this.colorIndex++];
+            if (this.colorIndex >= ColorMap.prototype.colors.length) this.colorIndex = 0;
+            this.map[key] = color;
+            return color;
+        }
     };
 
     // ======================================================================= 
@@ -68,8 +78,18 @@
 
     NodeDisplay.prototype = {
 
-        init: function (parent, width, height) {
+        init: function (parentDomNode, width, height, idFunction, typeFunction) {
             var self = this;
+            this.width = width;
+            this.height = height;
+            this.needUpdate = false;
+            this.idFunction = idFunction || function () {
+                return this;
+            };
+            this.typeFunction = typeFunction || function () {
+                return '';
+            };
+            this.colorMap = new ColorMap();
             this.force = d3.layout
                 .force()
                 .on("tick", function () {
@@ -80,24 +100,69 @@
                 .charge(-200);
             //.linkStrength(0.9)
 
-            this.displayArea = d3.select(parent).append("svg:svg")
+            this.displayArea = d3.select(parentDomNode).append("svg:svg")
                 .attr("width", width)
                 .attr("height", height);
 
+            this.nodeMap = {};
+            this.nodes = [];
+
+            this.linkMap = {};
+            this.links = [];
+
         },
 
-        update: function (nodes, links) {
+        random: function (from, to) {
+            return Math.floor((Math.random() * to) + from);
+        },
+
+        addNode: function (obj) {
+            var id = this.idFunction.apply(obj, [obj]);
+            var node = this.nodeMap[id];
+            if (node) return node;
+            node = {
+                x: this.random(0, this.width - 1),
+                y: this.random(0, this.height - 1),
+                obj: obj
+            };
+            this.nodeMap[id] = node;
+            this.nodes.push(node);
+            this.needUpdate = true;
+            return node;
+        },
+
+        addLink: function (source, target, type) {
+            type = type || '->';
+            var sourceId = this.idFunction.apply(source, [source]);
+            var targetId = this.idFunction.apply(target, [target]);
+            var linkId = '' + sourceId + type + targetId;
+            var link = this.linkMap[linkId];
+            if (link) return link;
+            var sourceNode = this.nodeMap[sourceId];
+            var targetNode = this.nodeMap[targetId];
+            link = {
+                source: sourceNode,
+                target: targetNode
+            };
+            this.linkMap[linkId] = link;
+            this.links.push(link);
+            this.needUpdate = true;
+            return link;
+        },
+
+        update: function () {
+
+            if (!this.needUpdate) return;
+            this.needUpdate = false;
 
             var self = this;
 
-            this.force.nodes(nodes)
-                .links(links)
+            this.force.nodes(this.nodes)
+                .links(this.links)
                 .start();
 
             this.link = this.displayArea.selectAll("line.link")
-                .data(links, function (d) {
-                    return d.id;
-                });
+                .data(this.links);
 
             this.link.enter().insert("svg:line", ".node")
                 .attr("class", "link")
@@ -117,9 +182,7 @@
             this.link.exit().remove();
 
             this.node = this.displayArea.selectAll("circle.node")
-                .data(nodes, function (d) {
-                    return d.id;
-                });
+                .data(this.nodes);
 
             this.node.enter().append("svg:circle")
                 .attr("class", "node")
@@ -130,10 +193,16 @@
                     return d.y;
                 })
                 .attr("r", 5)
-                .style("fill", "black")
+                .style("fill", function (d) {
+                    var type = self.typeFunction.apply(d.obj, []);
+                    return self.colorMap.getColor(type);
+                })
                 .on('click', function (d) {
                     if (d3.event.defaultPrevented) return;
                     self.click(d);
+                })
+                .on('mouseover', function (d) {
+                    if (self.mouseover) self.mouseover(d);
                 })
                 .call(this.force.drag);
 
@@ -171,34 +240,28 @@
     // =======================================================================     
     var test = function () {
 
-        var tree = createTree(2, 5);
         var nodeDisplay = new NodeDisplay('body', 600, 600);
+        createTree(nodeDisplay, 2, 5);
         nodeDisplay.click = function (d) {
-            var node = {
-                x: d.x + 50,
-                y: d.y + 50,
-                id: generateId()
-            };
-            tree.nodes.push(node);
-            var link = {
-                source: d,
-                target: node,
-                id: generateId()
-            };
-            tree.links.push(link);
-            nodeDisplay.update(tree.nodes, tree.links);
+            var targetObj = generateId();
+            nodeDisplay.addNode(targetObj);
+            nodeDisplay.addLink(d.obj, targetObj);
+            nodeDisplay.update();
         };
-        nodeDisplay.update(tree.nodes, tree.links);
+        nodeDisplay.update();
     };
 
     // ======================================================================= 
     // odata test
     // =======================================================================     
     var oDataTest = function () {
-        var nodes = [];
-        var links = [];
 
-        var followLink = function (source, uri) {
+        var model = {
+            detailFields: [],
+            detailObject: null
+        };
+
+        var followLink = function (source, uri, type) {
 
             var parser = document.createElement('a');
             parser.href = uri;
@@ -207,46 +270,55 @@
             oDataService.getData(path).done(function (objects) {
                 for (var i = 0; i < objects.length; i++) {
                     var object = objects[i];
-                    var node = {
-                        x: 300,
-                        y: 300,
-                        id: generateId(),
-                        bo: object
-                    };
-                    nodes.push(node);
-                    var link = {
-                        source: source,
-                        target: node,
-                        id: generateId()
-                    };
-                    links.push(link);
+                    nodeDisplay.addNode(object);
+                    nodeDisplay.addLink(source, object, type);
                 }
-                nodeDisplay.update(nodes, links);
+                nodeDisplay.update();
             });
 
         };
 
-        var nodeDisplay = new NodeDisplay('body', 600, 600);
+        dobi.binding.run(model, document.getElementById('templates'), document.getElementById('target'));
+        $(document).foundation();
+
+        var nodeDisplay = new NodeDisplay('#_nodeDisplay', 600, 600, function () {
+            return this.__metadata.id;
+        }, function () {
+            return this.__metadata.type;
+        });
+
         nodeDisplay.click = function (node) {
-            for (var propertyName in node.bo) {
-                var propertyValue = node.bo[propertyName];
-                if (!propertyValue.__deferred) continue;
-                followLink(node, propertyValue.__deferred.uri);
+            for (var propertyName in node.obj) {
+                var propertyValue = node.obj[propertyName];
+                if (!propertyValue || !propertyValue.__deferred || !propertyValue.__deferred.uri) continue;
+                followLink(node.obj, propertyValue.__deferred.uri, propertyName);
             }
-            nodeDisplay.update(nodes, links);
+        };
+
+        nodeDisplay.mouseover = function (node) {
+            var detailFields = [];
+            model.detailObject = {
+                type: node.obj.__metadata.type
+            };
+            detailFields.push({
+                name: 'type'
+            });
+            for (var propertyName in node.obj) {
+                var propertyValue = node.obj[propertyName];
+                if (dobi.binding.getType(propertyValue) !== 'simple') continue;
+                model.detailObject[propertyName] = propertyValue;
+                detailFields.push({name:propertyName});
+            }
+            model.setDetailFields(detailFields);
         };
 
         var oDataService = new odatalib.ODataService('/V3/Northwind/Northwind.svc');
         oDataService.getData('/V3/Northwind/Northwind.svc/Products(1)').done(function (objects) {
-            var root = {
-                x: 300,
-                y: 300,
-                id: generateId(),
-                bo: objects[0]
-            };
-            nodes.push(root);
-            nodeDisplay.update(nodes, links);
+            nodeDisplay.addNode(objects[0]);
+            nodeDisplay.update();
         });
+
+
     };
 
     //test();
