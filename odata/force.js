@@ -52,7 +52,7 @@
 
     ColorMap.prototype = {
 
-        colors: ['black', 'red', 'green', 'blue', 'yellow'],
+        colors: ['red', 'green', 'blue', 'yellow', 'black'],
 
         init: function () {
             this.map = {};
@@ -258,7 +258,12 @@
 
         var model = {
             detailFields: [],
-            detailObject: null
+            detailObject: null,
+
+            navigate: function (event, obj) {
+                event.preventDefault();
+                followLink(model.detailObject.oDataObject, obj.uri, obj.name);
+            }
         };
 
         var followLink = function (source, uri, type) {
@@ -298,16 +303,33 @@
         nodeDisplay.mouseover = function (node) {
             var detailFields = [];
             model.detailObject = {
-                type: node.obj.__metadata.type
+                type: node.obj.__metadata.type,
+                links: [],
+                oDataObject: node.obj
             };
             detailFields.push({
-                name: 'type'
+                name: 'type',
+                template: 'simple'
+            });
+            detailFields.push({
+                name: 'links',
+                template: 'links'
             });
             for (var propertyName in node.obj) {
                 var propertyValue = node.obj[propertyName];
+                if (propertyValue && propertyValue.__deferred) {
+                    model.detailObject.links.push({
+                        name: propertyName,
+                        uri: propertyValue.__deferred.uri
+                    });
+                    continue;
+                }
                 if (dobi.binding.getType(propertyValue) !== 'simple') continue;
                 model.detailObject[propertyName] = propertyValue;
-                detailFields.push({name:propertyName});
+                detailFields.push({
+                    name: propertyName,
+                    template: 'simple'
+                });
             }
             model.setDetailFields(detailFields);
         };
