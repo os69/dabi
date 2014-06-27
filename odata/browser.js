@@ -7,7 +7,7 @@
 
     window.obo = window.obo || {};
     var module = window.obo.browser;
-    var odatalib = window.obo.odatalib;
+    var odata = window.obo.odata;
 
     // ======================================================================= 
     // model
@@ -36,7 +36,7 @@
 
         load: function () {
             var self = this;
-            this.oDataService = new odatalib.ODataService(this.serviceUrl);
+            this.oDataService = new odata.ODataService(this.serviceUrl);
             this.oDataService.loadMetadata().done(function () {
                 self.setEntitySetsMetadata(self.oDataService.entitySetsMetadata);
                 self.setEntitySet(self.oDataService.entitySetsMetadata[0].name);

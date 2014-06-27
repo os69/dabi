@@ -9,7 +9,7 @@
 (function () {
 
     window.obo = window.obo || {};
-    var module = window.obo.odatalib = {};
+    var module = window.obo.odata = {};
 
     // ======================================================================= 
     // OData service
