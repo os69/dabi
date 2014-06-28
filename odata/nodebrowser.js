@@ -24,17 +24,39 @@
             // node display
             var nodeDisplayNode = document.createElement('div');
             parentNode.appendChild(nodeDisplayNode);
-            this.nodeDisplay = new nodes.NodeDisplay(nodeDisplayNode, 600, 600, function () {
-                return this.__metadata.id;
-            }, function () {
-                return this.__metadata.type;
+            this.nodeDisplay = new nodes.NodeDisplay({
+                parentDomNode: nodeDisplayNode,
+                width: 600,
+                height: 600,
+                getId: function (obj) {
+                    return obj.__metadata.id;
+                },
+                getType: function (obj) {
+                    return obj.__metadata.type;
+                },
+                getRelationTypes: function (obj) {
+                    var types = [];
+                    for (var propertyName in obj) {
+                        var propertyValue = obj[propertyName];
+                        if (!propertyValue || !propertyValue.__deferred || !propertyValue.__deferred.uri) continue;
+                        types.push(propertyName);
+                    }
+                    return types;
+                },
+                getRelatedObjects: function (obj, type) {
+                    var result = $.Deferred();
+                    var parser = document.createElement('a');
+                    parser.href = obj[type].__deferred.uri;
+                    var path = parser.pathname;
+                    return self.oDataService.getData(path);
+                },
+                click: function (node) {
+                    self.click(node);
+                },
+                mouseover: function (node) {
+                    self.mouseover(node);
+                }
             });
-            this.nodeDisplay.click = function (node) {
-                self.click(node);
-            };
-            this.nodeDisplay.mouseover = function (node) {
-                self.mouseover(node);
-            };
 
             // node detail viewer
             this.detailModel = {
@@ -42,7 +64,7 @@
                 detailObject: null,
                 navigate: function (event, obj) {
                     event.preventDefault();
-                    self.followLink(this.detailObject.oDataObject, obj.uri, obj.name);
+                    this.detailObject.node.toggle(obj.name);
                 }
             };
             var detailNode = document.createElement('div');
@@ -59,11 +81,8 @@
         },
 
         click: function (node) {
-            for (var propertyName in node.obj) {
-                var propertyValue = node.obj[propertyName];
-                if (!propertyValue || !propertyValue.__deferred || !propertyValue.__deferred.uri) continue;
-                this.followLink(node.obj, propertyValue.__deferred.uri, propertyName);
-            }
+            var self = this;
+            node.toggleAll();
         },
 
         mouseover: function (node) {
@@ -73,7 +92,7 @@
             self.detailModel.detailObject = {
                 type: node.obj.__metadata.type,
                 links: [],
-                oDataObject: node.obj
+                node: node
             };
             detailFields.push({
                 name: 'type',
@@ -102,8 +121,47 @@
             self.detailModel.setDetailFields(detailFields);
         },
 
-        followLink: function (source, uri, type) {
+        followLink: function (node, uri, type, mode) {
 
+            // check if already link type has been loaded
+            if (!node.__links) node.__links = {};
+            var status = node.__links[type];
+            if (status) {
+                switch (mode) {
+                case 'expand':
+                    if (!status.expanded) {
+                        status.expanded = true;
+                        node.expand(type);
+                        this.nodeDisplay.update();
+                    }
+                    break;
+                case 'collapse':
+                    if (status.expanded) {
+                        status.expanded = false;
+                        node.collapse(type);
+                        this.nodeDisplay.update();
+                    }
+                    break;
+                case 'toggle':
+                    if (status.expanded) {
+                        status.expanded = false;
+                        node.collapse(type);
+                        this.nodeDisplay.update();
+                        return;
+                    } else {
+                        status.expanded = true;
+                        node.expand(type);
+                        this.nodeDisplay.update();
+                        return;
+                    }
+                    break;
+                }
+                return;
+            }
+
+            if (mode === 'collapse') return;
+
+            // load links via odata service
             var self = this;
             var parser = document.createElement('a');
             parser.href = uri;
@@ -113,11 +171,15 @@
                 for (var i = 0; i < objects.length; i++) {
                     var object = objects[i];
                     self.nodeDisplay.addNode(object);
-                    self.nodeDisplay.addLink(source, object, type);
+                    self.nodeDisplay.addLink(node.obj, object, type);
                 }
                 self.nodeDisplay.update();
             });
 
+            //mark link type as loaded + expanded
+            node.__links[type] = {
+                expanded: true
+            };
         }
 
     };

@@ -4,6 +4,7 @@
 /* global document */
 /* global dobi */
 /* global $ */
+/* global console */
 
 (function () {
 
@@ -41,6 +42,9 @@
     nodeDisplay.click = function (d) {
         currentNode = d;
     };
+    nodeDisplay.mouseover = function(d){
+        console.log(d.internalId);
+    };
     nodeDisplay.update();
 
     document.getElementById('add').addEventListener('click', function () {
@@ -51,12 +55,12 @@
     });
 
     document.getElementById('collapse').addEventListener('click', function () {
-        nodeDisplay.collapse(currentNode.obj);
+        currentNode.collapse();
         nodeDisplay.update();
     });
 
     document.getElementById('expand').addEventListener('click', function () {
-        nodeDisplay.expand(currentNode.obj);
+        currentNode.expand();
         nodeDisplay.update();
     });
 
