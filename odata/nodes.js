@@ -234,9 +234,9 @@
         },
 
         toggleAll: function () {
-            if(this.getNumberVisibleLinks()>0){
+            if (this.getNumberVisibleLinks() > 0) {
                 return this.collapseAll();
-            }else{
+            } else {
                 return this.expandAll();
             }
             /*var deferreds = [];
@@ -298,6 +298,25 @@
             this.displayArea = d3.select(options.parentDomNode).append("svg:svg")
                 .attr("width", this.width)
                 .attr("height", this.height);
+            var defs = this.displayArea.append("svg:defs");
+            var marker = defs.append("svg:marker")
+                .attr("id", "markerArrow")
+                .attr("markerWidth", 13)
+                .attr("markerHeight", 13)
+                .attr("refX", 10)
+                .attr("refY", 0)
+                .attr("orient", "auto");
+            marker.append("svg:path")
+                .attr("d", "M3,0 L0,3")
+                .attr("style", "stroke: #9ecae1; stroke-width: 1.5px;");
+
+
+
+            //<marker id="markerArrow" markerWidth="13" markerHeight="13" refx="2" refy="6"
+            //           orient="auto">
+            //        <path d="M2,2 L2,11 L10,6 L2,2" style="fill: #000000;" />
+            //    </marker>
+
 
             this.nodeMap = {};
 
@@ -377,7 +396,8 @@
                 })
                 .attr("y2", function (d) {
                     return d.target.y;
-                });
+                })
+                .attr("style", "marker-end:url(#markerArrow);");
 
             this.linkSel.exit().remove();
 
@@ -413,7 +433,7 @@
         },
 
         tick: function () {
-            
+
             var self = this;
 
             this.linkSel.attr("x1", function (d) {
