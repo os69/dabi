@@ -15,12 +15,12 @@
     // =======================================================================     
     var gId = 0;
     var generateId = function () {
-        return gId++;
+        return 'n' + gId++;
     };
 
     var gLinkId = 0;
     var generateLinkId = function () {
-        return gLinkId++;
+        return 'l' + gLinkId++;
     };
 
     // ======================================================================= 
@@ -138,13 +138,14 @@
             return result;
         },
 
-        getNumberVisibleLinks: function () {
+        getNumberVisibleLinks: function (onlyForward) {
             var number = 0;
             for (var type in this.linkMap) {
                 var links = this.linkMap[type];
                 for (var internalTargetId in links.targets) {
                     var link = links.targets[internalTargetId];
                     var visible;
+                    if (onlyForward && link.type.indexOf('reverse_') === 0) continue;
                     if (link.type.indexOf('reverse_') === 0)
                         visible = link.forwardLink.visible;
                     else
@@ -234,7 +235,7 @@
         },
 
         toggleAll: function () {
-            if (this.getNumberVisibleLinks() > 0) {
+            if (this.getNumberVisibleLinks(true) > 0) {
                 return this.collapseAll();
             } else {
                 return this.expandAll();
@@ -287,9 +288,8 @@
                 .size([this.width, this.height])
                 .linkDistance(30)
                 .charge(-200);
-            //.linkStrength(0.9)
 
-            this.minRad = 5;
+            this.minRad = 6;
             this.maxRad = 15;
             this.minLinks = 0;
             this.maxLinks = 20;
@@ -299,27 +299,37 @@
                 .attr("width", this.width)
                 .attr("height", this.height);
             var defs = this.displayArea.append("svg:defs");
-            var marker = defs.append("svg:marker")
+
+            var arrowPath = function (cx, cy, dx, dy) {
+                return "M" + cx + "," + cy +
+                    " L" + (cx - dx) + "," + (cy - dy) +
+                    " L" + (cx - dx) + "," + (cy + dy) +
+                    " L" + cx + "," + cy;
+            };
+
+            var marker1 = defs.append("svg:marker")
                 .attr("id", "markerArrow")
                 .attr("markerWidth", 13)
                 .attr("markerHeight", 13)
                 .attr("refX", 10)
                 .attr("refY", 0)
                 .attr("orient", "auto");
-            marker.append("svg:path")
+            marker1.append("svg:path")
                 .attr("d", "M3,0 L0,3")
                 .attr("style", "stroke: #9ecae1; stroke-width: 1.5px;");
 
-
-
-            //<marker id="markerArrow" markerWidth="13" markerHeight="13" refx="2" refy="6"
-            //           orient="auto">
-            //        <path d="M2,2 L2,11 L10,6 L2,2" style="fill: #000000;" />
-            //    </marker>
-
+            var marker2 = defs.append("svg:marker")
+                .attr("id", "markerArrow2")
+                .attr("markerWidth", 10)
+                .attr("markerHeight", 10)
+                .attr("refX", 5 + (this.minRad * 0.6))
+                .attr("refY", 5)
+                .attr("orient", "auto");
+            marker2.append("svg:path")
+                .attr("d", arrowPath(5, 5, 3, 2))
+                .attr("style", "stroke-width:1px;stroke:#9ecae1; fill:#9ecae1;");
 
             this.nodeMap = {};
-
             this.nodes = [];
             this.links = [];
 
@@ -397,7 +407,7 @@
                 .attr("y2", function (d) {
                     return d.target.y;
                 })
-                .attr("style", "marker-end:url(#markerArrow);");
+                .attr("style", "marker-end:url(#markerArrow2);");
 
             this.linkSel.exit().remove();
 
@@ -451,11 +461,12 @@
             }).attr("cy", function (d) {
                 return d.y;
             }).attr("r", function (d) {
-                var number = d.getNumberVisibleLinks();
+                return self.minRad;
+                /*var number = d.getNumberVisibleLinks();
                 var rad = self.minRad + self.deltaRad * (number - self.minLinks);
                 if (rad < self.minRad) rad = self.minRad;
                 if (rad > self.maxRad) rad = self.maxRad;
-                return rad;
+                return rad;*/
             });
 
         }

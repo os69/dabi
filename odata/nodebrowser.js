@@ -38,7 +38,8 @@
                     var types = [];
                     for (var propertyName in obj) {
                         var propertyValue = obj[propertyName];
-                        if (!propertyValue || !propertyValue.__deferred || !propertyValue.__deferred.uri) continue;
+                        if (!propertyValue || !propertyValue.__deferred || !propertyValue.__deferred.uri)
+                            continue;
                         types.push(propertyName);
                     }
                     return types;
@@ -96,7 +97,7 @@
             };
             detailFields.push({
                 name: 'type',
-                template: 'simple'
+                template: 'bold'
             });
             detailFields.push({
                 name: 'links',
@@ -119,67 +120,6 @@
                 });
             }
             self.detailModel.setDetailFields(detailFields);
-        },
-
-        followLink: function (node, uri, type, mode) {
-
-            // check if already link type has been loaded
-            if (!node.__links) node.__links = {};
-            var status = node.__links[type];
-            if (status) {
-                switch (mode) {
-                case 'expand':
-                    if (!status.expanded) {
-                        status.expanded = true;
-                        node.expand(type);
-                        this.nodeDisplay.update();
-                    }
-                    break;
-                case 'collapse':
-                    if (status.expanded) {
-                        status.expanded = false;
-                        node.collapse(type);
-                        this.nodeDisplay.update();
-                    }
-                    break;
-                case 'toggle':
-                    if (status.expanded) {
-                        status.expanded = false;
-                        node.collapse(type);
-                        this.nodeDisplay.update();
-                        return;
-                    } else {
-                        status.expanded = true;
-                        node.expand(type);
-                        this.nodeDisplay.update();
-                        return;
-                    }
-                    break;
-                }
-                return;
-            }
-
-            if (mode === 'collapse') return;
-
-            // load links via odata service
-            var self = this;
-            var parser = document.createElement('a');
-            parser.href = uri;
-            var path = parser.pathname;
-
-            this.oDataService.getData(path).done(function (objects) {
-                for (var i = 0; i < objects.length; i++) {
-                    var object = objects[i];
-                    self.nodeDisplay.addNode(object);
-                    self.nodeDisplay.addLink(node.obj, object, type);
-                }
-                self.nodeDisplay.update();
-            });
-
-            //mark link type as loaded + expanded
-            node.__links[type] = {
-                expanded: true
-            };
         }
 
     };

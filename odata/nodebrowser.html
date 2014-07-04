@@ -32,9 +32,15 @@
 
     <div id="templates">
         <div data-def-template="simple">{{.}}</div>
+        <div data-def-template="bold">
+            <b>{{.}}</b>
+        </div>
         <div data-def-template="links">
             <span data-bind=".">
-                <a href="{{uri}}" data-event-click="info.resolveValue('/').navigate(event,info.self)">{{name}}</a><br>
+                <a href="{{uri}}" data-event-click="info.resolveValue('/').navigate(event,info.self)">
+                    {{name}}                    
+                </a>
+                <br>
             </span>
         </div>
         <table data-bind="detailFields">
