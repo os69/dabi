@@ -42,9 +42,7 @@
                         })[0];
                         info.resolve('.').set(entry);
                     });
-                });
-                 // subscription to . is not necessary because the root dropdown div has a object binding to .
-                 // (dropdown1: subscription to . is necessary because . is simple type, simple types never have object binding)
+                });                
             </script>
         </div>
 
@@ -59,10 +57,10 @@
                 testButton.addEventListener('click', function () {
                     switch (testCounter) {
                     case 0:
-
+                        window.setCountry(countries[0]);
                         break;
                     case 1:
-
+                        window.setCountry(countries[1]);
                         break;
                     }
                     testCounter++;

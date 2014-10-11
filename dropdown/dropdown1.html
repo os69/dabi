@@ -23,15 +23,10 @@
                         dobi.script(function (info) {
                             var keyOptionProperty = info.resolve('(metadata/key)');
                             var keyProperty = info.resolve('..');
-                            var setSelected = function () {
-                                if (keyOptionProperty.value() === keyProperty.value())
-                                    info.parentNode.setAttribute('selected', 'selected');
-                                else
-                                    info.parentNode.removeAttribute('selected');
-                            };
-                            setSelected();
-                            keyOptionProperty.subscribe(info.parentNode, setSelected);
-                            keyProperty.subscribe(info.parentNode, setSelected);
+                            if (keyOptionProperty.value() === keyProperty.value())
+                                info.parentNode.setAttribute('selected', 'selected');
+                            else
+                                info.parentNode.removeAttribute('selected');
                         });
                     </script>
                 </option>
@@ -60,7 +55,7 @@
                         window.setCountry('DE');
                         break;
                     case 1:
-                        countries[1].setKey('USX');
+                        countries[1].setKey('USx');
                         break;
                     }
                     testCounter++;

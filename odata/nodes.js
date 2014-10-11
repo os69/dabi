@@ -289,10 +289,10 @@
                 .linkDistance(30)
                 .charge(-200);
 
-            this.minRad = 6;
+            this.minRad = 3;
             this.maxRad = 15;
             this.minLinks = 0;
-            this.maxLinks = 20;
+            this.maxLinks = 10;
             this.deltaRad = (this.maxRad - this.minRad) / (this.maxLinks - this.minLinks);
 
             this.displayArea = d3.select(options.parentDomNode).append("svg:svg")

@@ -279,7 +279,8 @@
 
             // register for property change
             // for simple types the binding is done within the object template
-            if (module.getType(property.value()) !== 'simple') property.subscribe(node, bind);
+            //if (module.getType(property.value()) !== 'simple') property.subscribe(node, bind);
+            property.subscribe(node, bind);
 
             // register for change of transforation name
             if (trans instanceof propertyModule.Property) trans.subscribe(node, bind);

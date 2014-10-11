@@ -52,7 +52,7 @@ require(['dobi/binding', 'dobi/list', 'dobi/property'], function (bindingModule,
         // model: create a list
         var list = [];
 
-        // view: creatw a list
+        // view: create a list
         var listNode = document.createElement('ul');
         document.body.appendChild(listNode);
 
@@ -97,16 +97,16 @@ require(['dobi/binding', 'dobi/list', 'dobi/property'], function (bindingModule,
         };
 
         // view: create an input field for the id
-        var idNode1 = document.createElement('input');
-        document.body.appendChild(idNode1);
+        var inputNode = document.createElement('input');
+        document.body.appendChild(inputNode);
 
         // view: create display field for the id
-        var idNode2 = document.createElement('div');
-        document.body.appendChild(idNode2);
+        var displayNode = document.createElement('div');
+        document.body.appendChild(displayNode);
 
         // bind salesOrder.id to idNode1, idNode2
-        bindingModule.bindString(propertyModule.objectProperty(salesOrder, 'id'), idNode1);
-        bindingModule.bindString(propertyModule.objectProperty(salesOrder, 'id'), idNode2);
+        bindingModule.bindString(propertyModule.objectProperty(salesOrder, 'id'), inputNode);
+        bindingModule.bindString(propertyModule.objectProperty(salesOrder, 'id'), displayNode);
 
     };
 
