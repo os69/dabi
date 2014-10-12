@@ -260,6 +260,7 @@
         // ===================================================================        
         module.bindObject = function (property, node, trans, parameters) {
 
+            // ensure that property is really a property
             property = propertyModule.wrapAsProperty(property);
 
             var getTrans = function () {
@@ -273,18 +274,16 @@
                 module.unbindChildren(node);
                 node.innerHTML = "";
                 var t = getTrans();
-                /*if (property.value() !== null)*/
                 t(property, node, null, parameters);
             };
 
             // register for property change
-            // for simple types the binding is done within the object template
-            //if (module.getType(property.value()) !== 'simple') property.subscribe(node, bind);
             property.subscribe(node, bind);
 
-            // register for change of transforation name
+            // register for change of transformation name
             if (trans instanceof propertyModule.Property) trans.subscribe(node, bind);
 
+            // initial bind call
             bind();
         };
 
