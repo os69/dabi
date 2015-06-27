@@ -273,7 +273,11 @@
             var bind = function () {
                 module.unbindChildren(node);
                 node.innerHTML = "";
-                var t = getTrans();
+                var value = property.value();
+                if(value===undefined || value===null){
+                    return;
+                }
+                var t = getTrans();                
                 t(property, node, null, parameters);
             };
 
@@ -363,9 +367,9 @@
                     break;
                 }
             });
-            
+
             // register for transformation change
-            if (transItem instanceof propertyModule.Property) transItem.subscribe(node, function(){
+            if (transItem instanceof propertyModule.Property) transItem.subscribe(node, function () {
                 bind(property.value());
             });
 
@@ -610,6 +614,10 @@
             },
 
             execute: function () {
+                var value =this.resolveBinding('.').value();
+                if(value===undefined || value===null){
+                    return;
+                }
                 this.cloneChildrenNodes(this.node, this.env.data.node, this.env.data.refNode);
             },
 
@@ -794,12 +802,12 @@
                 if (this.processScript(node, targetParentNode, targetRefNode)) return;
 
                 var cloneNode = node.cloneNode(false);
-                if (cloneNode.hasAttribute && cloneNode.hasAttribute('id')){
+                if (cloneNode.hasAttribute && cloneNode.hasAttribute('id')) {
                     var id = cloneNode.getAttribute('id');
-                    if(id.length>0 && id[0]!=='_')
+                    if (id.length > 0 && id[0] !== '_')
                         cloneNode.setAttribute('id', cloneNode.getAttribute('id') + '_' + this.env.data.transId);
                 }
-                    
+
                 this.processElementAttributes(cloneNode);
                 module.insertNode(cloneNode, targetParentNode, targetRefNode);
                 this.processScriptAttributes(cloneNode, targetParentNode, targetRefNode);
@@ -851,8 +859,12 @@
 
                 if (parts.length === 1) {
                     binding.property = this.resolveBinding(parts[0]);
-                    if (binding.property)
+                    if (binding.property){
+                        if(binding.property.value()===undefined){                            
+                            throw this.generatePropertyError(node, binding.property);
+                        }
                         binding.type = module.getType(binding.property.value());
+                    }
                     binding.path = bind;
                 } else {
                     binding.property = this.resolveBinding(parts[1]);
@@ -866,6 +878,24 @@
                 return binding;
             },
 
+            generatePropertyError:function(node,property){
+                console.log('Binding Error');
+                console.log('Node:');
+                console.log(node);
+                console.log('Node HTML:');
+                console.log(node.outerHTML);
+                console.log('Path to root:');            
+                while(node){
+                    console.log(node);
+                    node  = node.parentNode;
+                }
+                console.log('Property:');
+                console.log('object',property.object);
+                console.log('path',property.path);
+                console.log('pathparts',property.pathParts);                
+                return 'Property Binding Error';
+            },
+            
             resolveGroups: function (path) {
                 var texts = [];
                 var parts = module.parseGroups(path);
