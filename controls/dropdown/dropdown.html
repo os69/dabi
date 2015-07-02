@@ -1,0 +1,56 @@
+<div data-def-template="dropdown1(entries,metadata)">
+    <select id="dropdown" data-bind="entries">
+        <option value="{{(metadata/key)}}">
+            {{(metadata/description)}}
+            <script>
+                dobi.script(function (info) {
+                    var keyOptionProperty = info.resolve('(metadata/key)');
+                    var keyProperty = info.resolve('..');
+                    if (keyOptionProperty.value() === keyProperty.value())
+                        info.parentNode.setAttribute('selected', 'selected');
+                    else
+                        info.parentNode.removeAttribute('selected');
+                });
+            </script>
+        </option>
+    </select>
+    <script>
+        dobi.script(function (info) {
+            var dropdown = info.getElementById('dropdown');
+            dropdown.addEventListener('click', function () {
+                info.resolve('.').set(dropdown.value);
+            });
+        });
+    </script>
+</div>
+
+<div data-def-template="dropdown2(entries,metadata)">
+    <select id="dropdown" data-bind="entries">
+        <option value="{{(metadata/key)}}">
+            {{(metadata/description)}}
+            <script>
+                dobi.script(function (info) {
+                    var keyOptionProperty = info.resolve('(metadata/key)');
+                    var keyProperty = info.resolve('../(metadata/key)');
+                    if (keyOptionProperty.value() === keyProperty.value())
+                        info.parentNode.setAttribute('selected', 'selected');
+                    else
+                        info.parentNode.removeAttribute('selected');
+                });
+            </script>
+        </option>
+    </select>
+    <script>
+        dobi.script(function (info) {
+            var dropdown = info.getElementById('dropdown');
+            var metadata = info.resolveValue('metadata');
+            dropdown.addEventListener('click', function () {
+                var entry = info.resolveValue('entries').filter(function (entry) {
+                    var p = dobi.property.objectProperty(entry, metadata.key);
+                    return p.value() === dropdown.value;
+                })[0];
+                info.resolve('.').set(entry);
+            });
+        });
+    </script>
+</div>

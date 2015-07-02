@@ -78,12 +78,71 @@
         // start template processor
         // ===================================================================
         module.run = function (rootScope, templateNode, targetNode) {
-            if (!targetNode) {
-                targetNode = document.createElement('div');
-                document.body.appendChild(targetNode);
+
+            // resolve html includes
+            module.resolveHtmlIncludes();
+
+            // set default scope
+            if (!rootScope) {
+                rootScope = window;
             }
+
+            // set default template node
+            if (!templateNode) {
+                templateNode = document.body;
+            }
+
+            // check if template node is body
+            var templateIsBody = false;
+            if (templateNode.nodeName === 'BODY') {
+                templateIsBody = true;
+            }
+
+            // process template node
+            if (templateIsBody) {
+                // move body child nodes to newly created div
+                var newTemplateNode = document.createElement('div');
+                for (var i = 0; i < templateNode.childNodes.length; true) {
+                    var childNode = templateNode.childNodes.item(i);
+                    childNode.parentNode.removeChild(childNode);
+                    newTemplateNode.appendChild(childNode);
+                }
+                templateNode = newTemplateNode;
+            } else {
+                // remove template from dom
+                templateNode.parentNode.removeChild(templateNode);
+            }
+
+            // set default target node
+            if (!targetNode) {
+                if (templateIsBody) {
+                    targetNode = document.body;
+                } else {
+                    targetNode = document.createElement('div');
+                    document.body.appendChild(targetNode);
+                }
+            }
+
+            // bind
             module.bindObject(rootScope, targetNode, module.parseTransformationFromTemplate(templateNode));
-            templateNode.parentNode.removeChild(templateNode);
+        };
+
+        // ===================================================================
+        // resolve html includes
+        // ===================================================================
+        module.resolveHtmlIncludes = function () {
+            for (var i = 0; i < document.body.childNodes.length; ++i) {
+                var node = document.body.childNodes.item(i);
+                if (node.nodeName === 'DIV' && node.getAttribute('data-include') && node.getAttribute('data-include').length > 0) {
+                    var path = node.getAttribute('data-include');
+                    var request = new XMLHttpRequest();
+                    request.open('GET', path, false);
+                    request.send(null);
+                    if (request.status !== 200)
+                        throw "HTTP GET failed:" + path;
+                    node.outerHTML = request.responseText;
+                }
+            }
         };
 
         // ===================================================================
@@ -274,10 +333,10 @@
                 module.unbindChildren(node);
                 node.innerHTML = "";
                 var value = property.value();
-                if(value===undefined || value===null){
+                if (value === undefined || value === null) {
                     return;
                 }
-                var t = getTrans();                
+                var t = getTrans();
                 t(property, node, null, parameters);
             };
 
@@ -336,7 +395,7 @@
             // initial bind
             bind(property.value());
 
-            // register for propert changes
+            // register for property changes
             property.subscribe(node, function (e) {
                 var list = property.value();
                 switch (e.message.type) {
@@ -614,8 +673,8 @@
             },
 
             execute: function () {
-                var value =this.resolveBinding('.').value();
-                if(value===undefined || value===null){
+                var value = this.resolveBinding('.').value();
+                if (value === undefined || value === null) {
                     return;
                 }
                 this.cloneChildrenNodes(this.node, this.env.data.node, this.env.data.refNode);
@@ -854,48 +913,71 @@
                 var bind = node.getAttribute('data-bind');
                 if (!bind) return false;
 
-                var parts = bind.split(new RegExp(":"));
-                var binding = {};
+                var transParams = this.getTransformationParameters(node);
 
+                var binding = {
+                    type: null,
+                    property: null,
+                    path: bind
+                };
+
+                var parts = bind.split(new RegExp(":"));
                 if (parts.length === 1) {
                     binding.property = this.resolveBinding(parts[0]);
-                    if (binding.property){
-                        if(binding.property.value()===undefined){                            
-                            throw this.generatePropertyError(node, binding.property);
+                    binding.path = bind;
+                    if (transParams.length > 0) {
+                        binding.type = 'object';
+                    } else {
+                        if (!binding.property || binding.property.value() === undefined || binding.property.value() === null) {
+                            this.log(node);
+                            this.log(binding.property);
+                            throw 'Bind Error - type cannot determined from property value';
                         }
                         binding.type = module.getType(binding.property.value());
                     }
-                    binding.path = bind;
                 } else {
                     binding.property = this.resolveBinding(parts[1]);
                     binding.type = parts[0];
                     binding.path = bind;
+                    if (transParams.length > 0 && binding.type != 'object') {
+                        this.log(node);
+                        this.log(binding.property);
+                        throw 'Bind Error - type inconsistency - type should be object';
+                    }
                 }
 
-                if (binding.property === null)
-                    throw "Cannot resolve binding:" + bind;
+                if (binding.property === null) {
+                    this.log(node);
+                    this.log(binding.property);
+                    throw 'Property undefined';
+                }
 
                 return binding;
             },
 
-            generatePropertyError:function(node,property){
-                console.log('Binding Error');
+            logNode: function (node) {
                 console.log('Node:');
                 console.log(node);
                 console.log('Node HTML:');
                 console.log(node.outerHTML);
-                console.log('Path to root:');            
-                while(node){
+                console.log('Path to root:');
+                while (node) {
                     console.log(node);
-                    node  = node.parentNode;
+                    node = node.parentNode;
+                }
+            },
+
+            logProperty: function (property) {
+                if (!property) {
+                    console.log('Property is undefined');
+                    return;
                 }
                 console.log('Property:');
-                console.log('object',property.object);
-                console.log('path',property.path);
-                console.log('pathparts',property.pathParts);                
-                return 'Property Binding Error';
+                console.log('Object      :', property.object);
+                console.log('Path        :', property.path);
+                console.log('Pathparts   :', property.pathParts);
             },
-            
+
             resolveGroups: function (path) {
                 var texts = [];
                 var parts = module.parseGroups(path);

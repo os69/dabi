@@ -25,12 +25,12 @@
             });
         </script>
 
-        <div data-bind="/modelEditor/model">
+        <div data-bind="object:/modelEditor/model">
             <h2>View Data Source</h2>
             <div data-bind="DataSource" data-template="datasource"></div>
         </div>
 
-        <div data-bind="/modelEditor/model">
+        <div data-bind="object:/modelEditor/model">
             <h2>Description</h2>
             <div class="input-group">
                 <span class="input-group-addon">Description</span>
@@ -42,7 +42,7 @@
         <!--<div data-bind="/modelEditor/dimension" class="input-group">
         </div>-->
 
-        <div data-bind="/modelEditor/dimension">
+        <div data-bind="object:/modelEditor/dimension">
 
             <h2>Attributes</h2>            
 
