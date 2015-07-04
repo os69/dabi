@@ -92,7 +92,7 @@
                             <span id="DelPresentationUsage" class="DelPresentationUsage glyphicon glyphicon-remove"></span>
                             <script>
                                 dobi.script(function(info) {
-                                    info.getElementById('DelPresentationUsage').addEventListener('click', function() {
+                                    info.getElementById('DelPresentationUsage').addEventListener('click', function() {                                      
                                         var key = info.resolveValue('key');
                                         var attribute = info.resolveValue('../');
                                         attribute.PresentationUsage.dictDel(key);
@@ -104,7 +104,7 @@
                     <span id="AddPresentationUsage" class="AddPresentationUsage glyphicon glyphicon-plus"></span>
                     <script>
                         dobi.script(function(info) {
-                            info.getElementById('AddPresentationUsage').addEventListener('click', function() {
+                            info.getElementById('AddPresentationUsage').addEventListener('click', function() {                                
                                 var attribute = info.resolveValue('.');
                                 attribute.PresentationUsage.dictSet('Area', '1');
                             });

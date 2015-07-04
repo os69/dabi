@@ -588,9 +588,25 @@
 
             clone: function () {
                 var env = new module.Environment();
-                env.stack = this.stack.slice(0);
+                //env.stack = this.stack.slice();
+                for (var i = 0; i < this.stack.length; ++i) {
+                    var data = this.stack[i];
+                    var newData = {};
+                    env.stack.push(newData);
+                    for (var attr in data) {
+                        if (attr === 'packages') {
+                            newData[attr] = data[attr].slice();
+                        } else {
+                            newData[attr] = data[attr];
+                        }
+                    }
+                }
                 env.adjustData();
                 return env;
+            },
+
+            set: function (name, value) {
+                this.data[name] = value;
             }
 
         };
@@ -618,6 +634,11 @@
         // create transformation function from template
         // ===================================================================        
         module.parseTransformationFromTemplate = function (node, env, parameterNames) {
+
+            if (env)
+                env = env.clone();
+            else
+                env = new module.Environment();
 
             return function () {
                 new module.TemplateExecutor(node, env, parameterNames, arguments).execute();
@@ -648,16 +669,14 @@
 
                 this.node = node;
 
-                if (env)
-                    this.env = env.clone();
-                else
-                    this.env = new module.Environment();
+                this.env = env.clone();
 
                 this.env.push({
                     'transId': module.generateId(),
                     'self': args[0],
                     'node': args[1],
-                    'refNode': args[2]
+                    'refNode': args[2],
+                    'packages': []
                 });
 
                 var parameters = args[3];
@@ -713,13 +732,55 @@
                 return result;
             },
 
+            getPackagePathList: function () {
+                var packages = [];
+                for (var i = 0; i < this.env.stack.length; ++i) {
+                    var data = this.env.stack[i];
+                    for (var j = 0; j < data.packages.length; ++j) {
+                        var package = data.packages[j];
+                        packages.push(package);
+                    }
+                }
+                return packages;
+            },
+
+            getPackagePath: function () {
+                var packages = this.getPackagePathList();
+                if (packages.length > 0) {
+                    return '/' + packages.join('/') + '/';
+                } else {
+                    return '';
+                }
+            },
+
+            resolvePackagePath: function (path) {
+                // check for root
+                if (path[0] === '/') {
+                    return path;
+                }
+                // search in package scopes
+                var packages = this.getPackagePathList();
+                for (var i = 0; i < packages.length; ++i) {
+                    var packagePrefix = '/' + packages.slice(0, packages.length - i).join('/') + '/';
+                    var transName = packagePrefix + path;
+                    if (module.transformations[transName]) {
+                        return module.transformations[transName];
+                    }
+                }
+                if (module.transformations[path]) {
+                    return module.transformations[path];
+                }
+                throw 'Cannot resolve package path ' + path;
+            },
+
             processDefTemplate: function (node) {
                 if (!node.getAttribute || !node.getAttribute('data-def-template')) return false;
                 var value = node.getAttribute('data-def-template');
                 node.removeAttribute('data-def-template');
                 var parseResult = this.parseTemplateDefAttribute(value);
-                module.transformations[parseResult.templateName] = module.parseTransformationFromTemplate(node, this.env, parseResult.parameterNames);
-                node.parentNode.removeChild(node);
+                var transName = this.getPackagePath() + parseResult.templateName;
+                module.transformations[transName] = module.parseTransformationFromTemplate(node, this.env, parseResult.parameterNames);
+                //node.parentNode.removeChild(node);
                 return true;
             },
 
@@ -854,8 +915,18 @@
                 }
             },
 
+            processPackageDefinition: function (node) {
+                if (!node.hasAttribute || !node.hasAttribute('data-package')) {
+                    return false;
+                }
+                var package = node.getAttribute('data-package');
+                this.env.data.packages.push(package);
+                return true;
+            },
+
             cloneNode: function (node, targetParentNode, targetRefNode) {
 
+                var isPackageDef = this.processPackageDefinition(node);
                 if (this.processDefTemplate(node)) return;
                 if (this.processTextNode(node, targetParentNode, targetRefNode)) return;
                 if (this.processScript(node, targetParentNode, targetRefNode)) return;
@@ -874,6 +945,9 @@
                 var binding = this.parseBindAttribute(node);
                 if (!binding) {
                     this.cloneChildrenNodes(node, cloneNode);
+                    if (isPackageDef) {
+                        this.env.data.packages.pop();
+                    }
                     return;
                 }
 
@@ -929,8 +1003,8 @@
                         binding.type = 'object';
                     } else {
                         if (!binding.property || binding.property.value() === undefined || binding.property.value() === null) {
-                            this.log(node);
-                            this.log(binding.property);
+                            this.logNode(node);
+                            this.logProperty(binding.property);
                             throw 'Bind Error - type cannot determined from property value';
                         }
                         binding.type = module.getType(binding.property.value());
@@ -940,15 +1014,15 @@
                     binding.type = parts[0];
                     binding.path = bind;
                     if (transParams.length > 0 && binding.type != 'object') {
-                        this.log(node);
-                        this.log(binding.property);
+                        this.logNode(node);
+                        this.logProperty(binding.property);
                         throw 'Bind Error - type inconsistency - type should be object';
                     }
                 }
 
                 if (binding.property === null) {
-                    this.log(node);
-                    this.log(binding.property);
+                    this.logNode(node);
+                    this.logProperty(binding.property);
                     throw 'Property undefined';
                 }
 
@@ -1085,7 +1159,7 @@
                         var property = this.resolveBinding(bindName);
                         return property;
                     } else {
-                        return module.transformations[transformationName];
+                        return this.resolvePackagePath(transformationName);
                     }
                 } else {
                     if (node.childNodes.length > 0)
