@@ -16,48 +16,48 @@
 
     <div data-package="package1">
 
-        <div data-def-template="person">
+        <div data-def-template="person(pa1,pa2)">
+            <li>
+                <div data-package="package3">
 
-            <div data-package="package3">
+                    <div data-def-template="subtemplate">
+                        <span data-bind="."></span>
+                    </div>
 
-                <div data-def-template="subtemplate">
-                    <span data-bind="."></span>
+
                 </div>
 
-
-            </div>
-
-            <h1>Person</h1>
-            <span data-bind="firstName"></span>
-            <span data-bind="lastName"></span>
-            <div data-bind="firstName" data-template="package3/subtemplate"></div>
-
+                <h1>Person</h1>
+                <span data-bind="firstName"></span>
+                <span data-bind="lastName"></span>
+                <div data-bind="firstName" data-template="package3/subtemplate"></div>
+            </li>
         </div>
 
         <div>
             <div data-package="package2">
                 <div data-def-template="item(pa1,pa2)">
-                    <span data-bind="pa1"></span>
-                    <span data-bind="pa2"></span>
-                    <ul data-bind=".">
-                        <li>
-                            <span data-bind="firstName"></span>
-                            <span data-bind="lastName"></span>
-                        </li>
-                    </ul>
+                    <li>
+                        <span data-bind="pa1"></span>
+                        <span data-bind="pa2"></span>
+                        <span data-bind="firstName"></span>
+                        <span data-bind="lastName"></span>
+                    </li>
                 </div>
             </div>
         </div>
 
         <div data-package="package4">
-            <div data-bind="/persons/0" data-template="person"></div>
+            <div data-bind="/persons/1" data-template="person"></div>
         </div>
+
     </div>
 
 
-    <!--  <div data-bind="/persons" data-template="item" data-template-parameters="p1,p2"></div>
+    <div data-bind="/persons" data-template="/package1/person" data-template-parameters="p1,p2"></div>
+    <!--    <div data-bind="/persons" data-template="/package1/package2/item" data-template-parameters="p1,p2"></div>-->
 
-    <ul data-bind="/persons">
+    <!--<ul data-bind="/persons">
         <li>
             <span data-bind="firstName"></span>
             <span data-bind="lastName"></span>

@@ -162,8 +162,14 @@
         // ===================================================================        
         module.unbind = function (node) {
             eventingModule.deleteSubscriptions(node);
-            for (var i = 0; i < node.childNodes.length; ++i) {
-                var child = node.childNodes.item(i);
+            if (node.attributes) {
+                for (var i = 0; i < node.attributes.length; ++i) {
+                    var attributeNode = node.attributes.item(i);
+                    eventingModule.deleteSubscriptions(attributeNode);
+                }
+            }
+            for (var j = 0; j < node.childNodes.length; ++j) {
+                var child = node.childNodes.item(j);
                 module.unbind(child);
             }
         };
@@ -207,6 +213,7 @@
         module.bindTextNode = function (property, node, trans1) {
             property = propertyModule.wrapAsProperty(property);
             node.nodeValue = module.toString(property.value());
+            eventingModule.deleteSubscriptions(node);
             property.subscribe(node, function () {
                 node.nodeValue = property.value();
             });
@@ -215,6 +222,7 @@
         module.bindStringInput = function (property, node, trans1, trans2) {
             property = propertyModule.wrapAsProperty(property);
             node.value = module.toString(property.value());
+            eventingModule.deleteSubscriptions(node);
             property.subscribe(node, function () {
                 node.value = property.value();
             });
@@ -226,6 +234,7 @@
         module.bindStringElement = function (property, node, trans1) {
             property = propertyModule.wrapAsProperty(property);
             node.textContent = module.toString(property.value());
+            eventingModule.deleteSubscriptions(node);            
             property.subscribe(node, function () {
                 node.textContent = property.value();
             });
@@ -234,6 +243,7 @@
         module.bindCheckbox = function (property, node, trans1, trans2) {
             property = propertyModule.wrapAsProperty(property);
             node.checked = trans1 ? trans1(property.value()) : property.value();
+            eventingModule.deleteSubscriptions(node);
             property.subscribe(node, function () {
                 node.checked = trans1 ? trans1(property.value()) : property.value();
             });
@@ -247,17 +257,18 @@
         // ===================================================================        
         module.bindAttributeToElementAttribute = function (property, attributeName, node, trans) {
 
+            var attributeNode = node.attributes[attributeName];
+
             var bind = function () {
                 var val = trans ? trans(property.value()) : property.value();
-                if (val === '$remove')
-                    node.removeAttribute(attributeName);
-                else
-                    node.setAttribute(attributeName, val);
+                node.setAttribute(attributeName, val);
             };
 
             bind();
 
-            property.subscribe(node, function () {
+            eventingModule.deleteSubscriptions(attributeNode);
+            
+            property.subscribe(attributeNode, function () {
                 bind();
             });
 
@@ -308,7 +319,15 @@
 
             bind();
 
-            property.subscribe(node, function () {
+            var attributeNode = node.attributes['data-class'];
+            if (!attributeNode) {
+                node.setAttribute('data-class', 'generated');
+                attributeNode = node.attributes['data-class'];
+            }
+        
+            eventingModule.deleteSubscriptions(attributeNode);
+    
+            property.subscribe(attributeNode, function () {
                 bind();
             });
 
@@ -325,8 +344,11 @@
             var getTrans = function () {
                 if (trans instanceof propertyModule.Property)
                     return module.transformations[trans.value()];
-                else
+                else if (typeof (trans) === 'string') {
+                    return module.transformations[trans];
+                } else {
                     return trans;
+                }
             };
 
             var bind = function () {
@@ -339,6 +361,9 @@
                 var t = getTrans();
                 t(property, node, null, parameters);
             };
+
+            // cleanup old subscriptions
+            eventingModule.deleteSubscriptions(node);
 
             // register for property change
             property.subscribe(node, bind);
@@ -353,7 +378,7 @@
         // ===================================================================
         // bind list to dom element (ul)
         // ===================================================================        
-        module.bindList = function (property, node, transItem) {
+        module.bindList = function (property, node, transItem, parameters) {
             property = propertyModule.wrapAsProperty(property);
 
             var dummy = function () {};
@@ -361,15 +386,18 @@
             var getTransItem = function () {
                 if (transItem instanceof propertyModule.Property)
                     return module.transformations[transItem.value()];
-                else
+                else if (typeof (transItem) === 'string') {
+                    return module.transformations[transItem];
+                } else {
                     return transItem;
+                }
             };
 
             var createItem = function (list, listIndex, parentNode, refNode) {
                 var elementProperty = propertyModule.listItemProperty(list, listIndex);
                 var t = getTransItem();
                 try {
-                    t(elementProperty, parentNode, refNode);
+                    t(elementProperty, parentNode, refNode, parameters);
                 } catch (e) {
                     throw e;
                 }
@@ -394,6 +422,9 @@
 
             // initial bind
             bind(property.value());
+
+            // cleanup old subscriptions
+            eventingModule.deleteSubscriptions(node);
 
             // register for property changes
             property.subscribe(node, function (e) {
@@ -435,9 +466,9 @@
         };
 
         // ===================================================================
-        // bind dic to dom element 
+        // bind dict to dom element 
         // ===================================================================        
-        module.bindDict = function (property, node, transItem) {
+        module.bindDict = function (property, node, transItem, parameters) {
             property = propertyModule.wrapAsProperty(property);
 
             // generate item
@@ -508,7 +539,7 @@
 
                 // bind list
                 var listProperty = propertyModule.staticProperty(list);
-                module.bindList(listProperty, node, transItem);
+                module.bindList(listProperty, node, transItem, parameters);
 
                 eventingModule.subscribe(obj, 'KeyAdded', list, function (event) {
                     var key = event.message.key;
@@ -594,7 +625,7 @@
                     var newData = {};
                     env.stack.push(newData);
                     for (var attr in data) {
-                        if (attr === 'packages') {
+                        if (attr === 'packages') { // deep copy for packages
                             newData[attr] = data[attr].slice();
                         } else {
                             newData[attr] = data[attr];
@@ -676,7 +707,8 @@
                     'self': args[0],
                     'node': args[1],
                     'refNode': args[2],
-                    'packages': []
+                    'packages': [],
+                    'control': {}
                 });
 
                 var parameters = args[3];
@@ -776,7 +808,7 @@
             processDefTemplate: function (node) {
                 if (!node.getAttribute || !node.getAttribute('data-def-template')) return false;
                 var value = node.getAttribute('data-def-template');
-                node.removeAttribute('data-def-template');
+                //node.removeAttribute('data-def-template');
                 var parseResult = this.parseTemplateDefAttribute(value);
                 var transName = this.getPackagePath() + parseResult.templateName;
                 module.transformations[transName] = module.parseTransformationFromTemplate(node, this.env, parseResult.parameterNames);
@@ -853,6 +885,7 @@
                 var attrName;
                 if (cloneNode.tagName === 'IMG' && attribute.name === 'data-src') {
                     cloneNode.removeAttribute(attribute.name);
+                    cloneNode.setAttribute('src', '');
                     attrName = 'src';
                 } else {
                     attrName = attribute.name;
@@ -962,10 +995,10 @@
 
                 switch (binding.type) {
                 case 'list':
-                    module.bindList(binding.property, cloneNode, trans);
+                    module.bindList(binding.property, cloneNode, trans, this.getTransformationParameters(node));
                     break;
                 case 'dict':
-                    module.bindDict(binding.property, cloneNode, trans);
+                    module.bindDict(binding.property, cloneNode, trans, this.getTransformationParameters(node));
                     break;
                 case 'object':
                     module.bindObject(binding.property, cloneNode, trans, this.getTransformationParameters(node));
@@ -999,25 +1032,16 @@
                 if (parts.length === 1) {
                     binding.property = this.resolveBinding(parts[0]);
                     binding.path = bind;
-                    if (transParams.length > 0) {
-                        binding.type = 'object';
-                    } else {
-                        if (!binding.property || binding.property.value() === undefined || binding.property.value() === null) {
-                            this.logNode(node);
-                            this.logProperty(binding.property);
-                            throw 'Bind Error - type cannot determined from property value';
-                        }
-                        binding.type = module.getType(binding.property.value());
+                    if (!binding.property || binding.property.value() === undefined || binding.property.value() === null) {
+                        this.logNode(node);
+                        this.logProperty(binding.property);
+                        throw 'Bind Error - type cannot determined from property value';
                     }
+                    binding.type = module.getType(binding.property.value());
                 } else {
                     binding.property = this.resolveBinding(parts[1]);
                     binding.type = parts[0];
                     binding.path = bind;
-                    if (transParams.length > 0 && binding.type != 'object') {
-                        this.logNode(node);
-                        this.logProperty(binding.property);
-                        throw 'Bind Error - type inconsistency - type should be object';
-                    }
                 }
 
                 if (binding.property === null) {

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="../dobi/eventing.js"></script>
+    <script src="../dobi/property.js"></script>
+    <script src="../dobi/binding.js"></script>
+    <script src="../dobi/list.js"></script>
+    <title>Templateproperty</title>
+</head>
+
+<body>
+
+    <div data-def-template="templ">
+        <span data-bind="."></span>
+    </div>
+
+    <div id="_target"></div>
+
+    <div data-test="{{/p1}}" data-class="{{p2}}"></div>
+
+    <script>
+    
+
+        window.p1 = 'Value1';
+        window.p2 = 'Value2';
+        window.persons = [{
+            lastName: 'Spring',
+            firstName: 'Sally'
+        }, {
+            lastName: 'Bear',
+            firstName: 'Bob'
+        }, {
+            lastName: 'Rüssel',
+            firstName: 'Rudi'
+        }];
+        dobi.binding.run();
+        window.setP1('Value1x');
+        window.setP2('Value2x');
+
+        var target = document.getElementById('_target');
+        var property1 = dobi.property.objectProperty(window,'p1');
+        var property2 = dobi.property.objectProperty(window,'p2');
+        dobi.binding.bindObject(property1, target, dobi.binding.transformations['templ']);
+        console.log(dobi.eventing.scounter);
+        dobi.binding.bindObject(property2, target, dobi.binding.transformations['templ']);
+        console.log(dobi.eventing.scounter);
+        
+    </script>
+
+</body>
+
+</html>
