@@ -234,7 +234,7 @@
         module.bindStringElement = function (property, node, trans1) {
             property = propertyModule.wrapAsProperty(property);
             node.textContent = module.toString(property.value());
-            eventingModule.deleteSubscriptions(node);            
+            eventingModule.deleteSubscriptions(node);
             property.subscribe(node, function () {
                 node.textContent = property.value();
             });
@@ -267,7 +267,7 @@
             bind();
 
             eventingModule.deleteSubscriptions(attributeNode);
-            
+
             property.subscribe(attributeNode, function () {
                 bind();
             });
@@ -324,9 +324,9 @@
                 node.setAttribute('data-class', 'generated');
                 attributeNode = node.attributes['data-class'];
             }
-        
+
             eventingModule.deleteSubscriptions(attributeNode);
-    
+
             property.subscribe(attributeNode, function () {
                 bind();
             });
@@ -841,6 +841,11 @@
 
             processElementAttribute: function (attribute, cloneNode) {
 
+                // ignore script event attribute
+                if (attribute.name.indexOf('data-event') >= 0 || attribute.name.indexOf('data-if') >= 0) {
+                    return;
+                }
+
                 // split attribute value into parts and create property for part
                 var parts = attribute.value.split(new RegExp("{{([^}]+)}}"));
                 var properties = [];
@@ -910,6 +915,7 @@
                     parentNode: targetParentNode,
                     refNode: targetRefNode,
                     self: self.env.data.self.value(),
+                    control: self.env.data.control,
                     getElementById: function (id) {
                         return document.getElementById(id + "_" + self.env.data.transId);
                     },
@@ -917,6 +923,9 @@
                         return self.resolveBinding(path);
                     },
                     resolveValue: function (path) {
+                        return this.resolve(path).value();
+                    },
+                    value: function (path) {
                         return this.resolve(path).value();
                     }
                 };
@@ -935,17 +944,35 @@
                 var event = attribute.name.split('-')[2];
                 cloneNode.addEventListener(event, function (event) {
                     var info = self.createScriptInfo(cloneNode, targetParentNode, targetRefNode);
+                    var $d = info;
                     eval(attribute.value); // jshint ignore:line
                 });
             },
 
-            processScriptAttributes: function (cloneNode, targetParentNode, targetRefNode) {
+            processEventScriptAttributes: function (cloneNode, targetParentNode, targetRefNode) {
                 if (!cloneNode.hasAttribute) return;
                 for (var i = 0; i < cloneNode.attributes.length; i++) {
                     var attribute = cloneNode.attributes.item(i);
                     if (attribute.name.indexOf('data-event') >= 0)
                         this.processEventScriptAttribute(attribute, cloneNode, targetParentNode, targetRefNode);
                 }
+            },
+
+            processIfScriptAttribute: function (attribute, cloneNode, targetParentNode, targetRefNode) {
+                var info = this.createScriptInfo(cloneNode, targetParentNode, targetRefNode);
+                return (function (info, $d) {
+                    return eval(attribute.value); // jshint ignore:line
+                })(info, info);
+            },
+
+            processIfScriptAttributes: function (cloneNode, targetParentNode, targetRefNode) {
+                if (!cloneNode.hasAttribute) return;
+                for (var i = 0; i < cloneNode.attributes.length; i++) {
+                    var attribute = cloneNode.attributes.item(i);
+                    if (attribute.name.indexOf('data-if') >= 0)
+                        return this.processIfScriptAttribute(attribute, cloneNode, targetParentNode, targetRefNode);
+                }
+                return true;
             },
 
             processPackageDefinition: function (node) {
@@ -972,8 +999,13 @@
                 }
 
                 this.processElementAttributes(cloneNode);
+
+                if (!this.processIfScriptAttributes(cloneNode, targetParentNode, targetRefNode)) {
+                    return;
+                }
+
                 module.insertNode(cloneNode, targetParentNode, targetRefNode);
-                this.processScriptAttributes(cloneNode, targetParentNode, targetRefNode);
+                this.processEventScriptAttributes(cloneNode, targetParentNode, targetRefNode);
 
                 var binding = this.parseBindAttribute(node);
                 if (!binding) {
@@ -986,28 +1018,18 @@
 
                 if (!binding.property) return;
 
-                var trans = this.getTransformation(node);
-
-                if (!trans) {
-                    module.bindString(binding.property, cloneNode);
-                    return;
-                }
-
                 switch (binding.type) {
                 case 'list':
-                    module.bindList(binding.property, cloneNode, trans, this.getTransformationParameters(node));
+                    module.bindList(binding.property, cloneNode, binding.trans, binding.transParams);
                     break;
                 case 'dict':
-                    module.bindDict(binding.property, cloneNode, trans, this.getTransformationParameters(node));
+                    module.bindDict(binding.property, cloneNode, binding.trans, binding.transParams);
                     break;
                 case 'object':
-                    module.bindObject(binding.property, cloneNode, trans, this.getTransformationParameters(node));
+                    module.bindObject(binding.property, cloneNode, binding.trans, binding.transParams);
                     break;
                 case 'simple':
-                    if (trans)
-                        module.bindObject(binding.property, cloneNode, trans, this.getTransformationParameters(node));
-                    else
-                        module.bindString(binding.property, cloneNode);
+                    module.bindString(binding.property, cloneNode);
                     break;
                 }
 
@@ -1020,12 +1042,15 @@
                 var bind = node.getAttribute('data-bind');
                 if (!bind) return false;
 
+                var trans = this.getTransformation(node);
                 var transParams = this.getTransformationParameters(node);
 
                 var binding = {
                     type: null,
                     property: null,
-                    path: bind
+                    path: bind,
+                    trans: trans,
+                    transParams: transParams
                 };
 
                 var parts = bind.split(new RegExp(":"));
@@ -1038,10 +1063,26 @@
                         throw 'Bind Error - type cannot determined from property value';
                     }
                     binding.type = module.getType(binding.property.value());
+                    if (!trans) {
+                        binding.type = 'simple';
+                    }
+                    if (trans && binding.type === 'simple') {
+                        binding.type = 'object';
+                    }
                 } else {
                     binding.property = this.resolveBinding(parts[1]);
                     binding.type = parts[0];
                     binding.path = bind;
+                    if (!trans && binding.type !== 'simple') {
+                        this.logNode(node);
+                        this.logProperty(binding.property);
+                        throw 'Bind Error - no transformation given - bindig type must be simple <> ' + binding.type;
+                    }
+                    if (trans && binding.type === 'simple') {
+                        this.logNode(node);
+                        this.logProperty(binding.property);
+                        throw 'Bind Error - transformation given - bindig type may not simple';
+                    }
                 }
 
                 if (binding.property === null) {
@@ -1092,6 +1133,14 @@
             },
 
             resolveBinding: function (path) {
+
+                // check for static property
+                if (path[0] === '\'') {
+                    if (path[path.length - 1] !== '\'') {
+                        throw 'Cannot parse binding path' + path;
+                    }
+                    return propertyModule.staticProperty(path.slice(1, path.length - 1));
+                }
 
                 // resolve {} groups in path
                 var newPath = this.resolveGroups(path);

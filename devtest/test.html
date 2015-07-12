@@ -20,7 +20,14 @@
 
     <div id="_target"></div>
 
-    <div data-test="{{/p1}}" data-class="{{p2}}"></div>
+    <ul data-bind="/persons">
+        <li>
+            <span data-event-click="alert(info.self.firstName)" data-bind="firstName"></span>
+            <ul data-if="$d.self.tags" data-bind="tags">
+                <li data-bind="."></li>
+            </ul>
+        </li>
+    </ul>
 
     <script>
     
@@ -32,22 +39,26 @@
             firstName: 'Sally'
         }, {
             lastName: 'Bear',
-            firstName: 'Bob'
+            firstName: 'Bob',
+            tags: ['a','b']
         }, {
             lastName: 'Rüssel',
             firstName: 'Rudi'
         }];
         dobi.binding.run();
-        window.setP1('Value1x');
+        
+        
+        /*window.setP1('Value1x');
         window.setP2('Value2x');
 
         var target = document.getElementById('_target');
         var property1 = dobi.property.objectProperty(window,'p1');
-        var property2 = dobi.property.objectProperty(window,'p2');
+        var property2 = dobi.property.objectProperty(window,'p2');       
+        
         dobi.binding.bindObject(property1, target, dobi.binding.transformations['templ']);
         console.log(dobi.eventing.scounter);
         dobi.binding.bindObject(property2, target, dobi.binding.transformations['templ']);
-        console.log(dobi.eventing.scounter);
+        console.log(dobi.eventing.scounter);*/
         
     </script>
 
