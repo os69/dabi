@@ -199,7 +199,7 @@
             if (node.nodeType === Node.TEXT_NODE) {
                 module.bindTextNode(property, node, trans1, trans2);
             } else {
-                if (node.tagName === 'INPUT') {
+                if (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') {
                     if (node.getAttribute('type') === 'checkbox')
                         module.bindCheckbox(property, node, trans1, trans2);
                     else
