@@ -2,111 +2,111 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="../../dobi/eventing.js"></script>
-    <script src="../../dobi/property.js"></script>
-    <script src="../../dobi/binding.js"></script>
-    <script src="../../dobi/list.js"></script>
-    <title>Dropdowntest</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="../../dobi/eventing.js"></script>
+	<script src="../../dobi/property.js"></script>
+	<script src="../../dobi/binding.js"></script>
+	<script src="../../dobi/list.js"></script>
+	<title>Dropdowntest</title>
 </head>
 
 <body>
 
-    <script>
-        dobi.binding.loadHtml("dropdown.html");
-    </script>
+	<script>
+		dobi.binding.loadHtml("dropdown.html");
+	</script>
 
 
-    <h1>Dropdown 1</h1>
-    <div data-template="dropdown1" data-bind="/d1/country" data-template-parameters="/d1/countries,/d1/countriesMeta"></div>
-    <div data-template="dropdown1" data-bind="/d1/country" data-template-parameters="/d1/countries,/d1/countriesMeta"></div>
+	<h1>Dropdown 1</h1>
+	<div data-template="dropdown1" data-bind="/d1/country" data-template-parameters="/d1/countries,/d1/countriesMeta"></div>
+	<div data-template="dropdown1" data-bind="/d1/country" data-template-parameters="/d1/countries,/d1/countriesMeta"></div>
 
-    <button id="testButton1">Click</button>
-    <script>
-        dobi.script(function (info) {
-            var testButton = info.getElementById('testButton1');
-            testButton.addEventListener('click', function () {
-                switch (window.d1.testCounter) {
-                case 0:
-                    window.d1.setCountry('DE');
-                    break;
-                case 1:
-                    window.d1.countries[1].setDescr('USx');
-                    break;
-                }
-                window.d1.testCounter++;
-            });
-        });
-    </script>
+	<button id="testButton1">Click</button>
+	<script>
+		dobi.script(function (info) {
+			var testButton = info.getElementById('testButton1');
+			testButton.addEventListener('click', function () {
+				switch (window.d1.testCounter) {
+				case 0:
+					window.d1.setCountry('DE');
+					break;
+				case 1:
+					window.d1.countries[1].setDescr('USx');
+					break;
+				}
+				window.d1.testCounter++;
+			});
+		});
+	</script>
 
-    <h1>Dropdown 2</h1>
-    <div data-template="dropdown2" data-bind="/d2/country" data-template-parameters="/d2/countries,/d2/countriesMeta"></div>
-    <div data-template="dropdown2" data-bind="/d2/country" data-template-parameters="/d2/countries,/d2/countriesMeta"></div>
+	<h1>Dropdown 2</h1>
+	<div data-template="dropdown2" data-bind="/d2/country" data-template-parameters="/d2/countries,/d2/countriesMeta"></div>
+	<div data-template="dropdown2" data-bind="/d2/country" data-template-parameters="/d2/countries,/d2/countriesMeta"></div>
 
-    <button id="testButton2">Click</button>
-    <script>
-        dobi.script(function (info) {
-            var testButton = info.getElementById('testButton2');
-            testButton.addEventListener('click', function () {
-                switch (window.d2.testCounter) {
-                case 0:
-                    window.d2.setCountry(window.d2.countries[0]);
-                    break;
-                case 1:
-                    window.d2.setCountry(window.d2.countries[1]);
-                    break;
-                }
-                window.d2.testCounter++;
-            });
-        });
-    </script>
+	<button id="testButton2">Click</button>
+	<script>
+		dobi.script(function (info) {
+			var testButton = info.getElementById('testButton2');
+			testButton.addEventListener('click', function () {
+				switch (window.d2.testCounter) {
+				case 0:
+					window.d2.setCountry(window.d2.countries[0]);
+					break;
+				case 1:
+					window.d2.setCountry(window.d2.countries[1]);
+					break;
+				}
+				window.d2.testCounter++;
+			});
+		});
+	</script>
 
-    <script>
-        // dropdown 1
-        var d1 = window.d1 = {};
+	<script>
+		// dropdown 1
+		var d1 = window.d1 = {};
 
-        d1.testCounter = 0;
+		d1.testCounter = 0;
 
-        d1.country = 'US';
+		d1.country = 'US';
 
-        d1.countries = [{
-            key: 'DE',
-            descr: 'Germany'
+		d1.countries = [{
+			key: 'DE',
+			descr: 'Germany'
         }, {
-            key: 'US',
-            descr: 'USA'
+			key: 'US',
+			descr: 'USA'
         }];
 
-        d1.countriesMeta = {
-            key: 'key',
-            description: 'descr'
-        };
+		d1.countriesMeta = {
+			key: 'key',
+			description: 'descr'
+		};
 
-        // dropdown 2
-        var d2 = window.d2 = {};
+		// dropdown 2
+		var d2 = window.d2 = {};
 
-        d2.testCounter=0;
-        
-        d2.countries = [{
-            key: 'DE',
-            descr: 'Germany'
+		d2.testCounter = 0;
+
+		d2.countries = [{
+			key: 'DE',
+			descr: 'Germany'
         }, {
-            key: 'US',
-            descr: 'USA'
+			key: 'US',
+			descr: 'USA'
         }];
 
-        d2.countriesMeta = {
-            key: 'key',
-            description: 'descr'
-        };
+		d2.countriesMeta = {
+			key: 'key',
+			description: 'descr'
+		};
 
-        d2.country = d2.countries[1];
+		d2.country = d2.countries[1];
 
-        // start 
-        dobi.binding.run();
-    </script>
+		// start 
+		dobi.binding.run();
+	</script>
 
 </body>
 

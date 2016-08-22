@@ -2,62 +2,62 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="../dobi/eventing.js"></script>
-    <script src="../dobi/property.js"></script>
-    <script src="../dobi/binding.js"></script>
-    <script src="../dobi/list.js"></script>
-    <title>Templateproperty</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="../dobi/eventing.js"></script>
+	<script src="../dobi/property.js"></script>
+	<script src="../dobi/binding.js"></script>
+	<script src="../dobi/list.js"></script>
+	<title>Templateproperty</title>
 </head>
 
 <body>
 
-    <div data-package="package1">
+	<div data-package="package1">
 
-        <div data-def-template="person(pa1,pa2)">
-            <li>
-                <div data-package="package3">
+		<div data-def-template="person(pa1,pa2)">
+			<li>
+				<div data-package="package3">
 
-                    <div data-def-template="subtemplate">
-                        <span data-bind="."></span>
-                    </div>
-
-
-                </div>
-
-                <h1>Person</h1>
-                <span data-bind="firstName"></span>
-                <span data-bind="lastName"></span>
-                <div data-bind="firstName" data-template="package3/subtemplate"></div>
-            </li>
-        </div>
-
-        <div>
-            <div data-package="package2">
-                <div data-def-template="item(pa1,pa2)">
-                    <li>
-                        <span data-bind="pa1"></span>
-                        <span data-bind="pa2"></span>
-                        <span data-bind="firstName"></span>
-                        <span data-bind="lastName"></span>
-                    </li>
-                </div>
-            </div>
-        </div>
-
-        <div data-package="package4">
-            <div data-bind="/persons/1" data-template="person"></div>
-        </div>
-
-    </div>
+					<div data-def-template="subtemplate">
+						<span data-bind="."></span>
+					</div>
 
 
-    <div data-bind="/persons" data-template="/package1/person" data-template-parameters="p1,p2"></div>
-    <!--    <div data-bind="/persons" data-template="/package1/package2/item" data-template-parameters="p1,p2"></div>-->
+				</div>
 
-    <!--<ul data-bind="/persons">
+				<h1>Person</h1>
+				<span data-bind="firstName"></span>
+				<span data-bind="lastName"></span>
+				<div data-bind="firstName" data-template="package3/subtemplate"></div>
+			</li>
+		</div>
+
+		<div>
+			<div data-package="package2">
+				<div data-def-template="item(pa1,pa2)">
+					<li>
+						<span data-bind="pa1"></span>
+						<span data-bind="pa2"></span>
+						<span data-bind="firstName"></span>
+						<span data-bind="lastName"></span>
+					</li>
+				</div>
+			</div>
+		</div>
+
+		<div data-package="package4">
+			<div data-bind="/persons/1" data-template="person"></div>
+		</div>
+
+	</div>
+
+
+	<div data-bind="/persons" data-template="/package1/person" data-template-parameters="p1,p2"></div>
+	<!--    <div data-bind="/persons" data-template="/package1/package2/item" data-template-parameters="p1,p2"></div>-->
+
+	<!--<ul data-bind="/persons">
         <li>
             <span data-bind="firstName"></span>
             <span data-bind="lastName"></span>
@@ -67,27 +67,27 @@
 
 
 
-    <!--<ul data-bind="/persons">
+	<!--<ul data-bind="/persons">
         <li>
             <span data-bind="firstName" data-event-click="alert(info.resolve('.').value().firstName)"></span>
         </li>
     </ul>-->
 
-    <script>
-        window.p1 = 'Value1';
-        window.p2 = 'Value2';
-        window.persons = [{
-            lastName: 'Spring',
-            firstName: 'Sally'
+	<script>
+		window.p1 = 'Value1';
+		window.p2 = 'Value2';
+		window.persons = [{
+			lastName: 'Spring',
+			firstName: 'Sally'
         }, {
-            lastName: 'Bear',
-            firstName: 'Bob'
+			lastName: 'Bear',
+			firstName: 'Bob'
         }, {
-            lastName: 'Rüssel',
-            firstName: 'Rudi'
+			lastName: 'Rüssel',
+			firstName: 'Rudi'
         }];
-        dobi.binding.run();
-    </script>
+		dobi.binding.run();
+	</script>
 
 </body>
 

@@ -2,51 +2,51 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="../../dobi/eventing.js"></script>
-    <script src="../../dobi/property.js"></script>
-    <script src="../../dobi/binding.js"></script>
-    <script src="../../dobi/list.js"></script>
-    <title>Tabletest</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="../../dobi/eventing.js"></script>
+	<script src="../../dobi/property.js"></script>
+	<script src="../../dobi/binding.js"></script>
+	<script src="../../dobi/list.js"></script>
+	<title>Tabletest</title>
 </head>
 
 <body>
 
-    <script>
-        dobi.binding.loadHtml("table.html");
-    </script>
+	<script>
+		dobi.binding.loadHtml("table.html");
+	</script>
 
-    <ul data-bind="/persons">
-        <li>
-            <span data-bind="firstName"></span>
-            <span data-bind="lastName"></span>
-        </li>
-    </ul>
+	<ul data-bind="/persons">
+		<li>
+			<span data-bind="firstName"></span>
+			<span data-bind="lastName"></span>
+		</li>
+	</ul>
 
-    <div data-bind="/persons" data-template="table" data-template-parameters="/metaData"></div>
+	<div data-bind="object:/persons" data-template="table" data-template-parameters="/metaData"></div>
 
-    <script>
-        window.persons = [{
-            lastName: 'Spring',
-            firstName: 'Sally'
+	<script>
+		window.persons = [{
+			lastName: 'Spring',
+			firstName: 'Sally'
         }, {
-            lastName: 'Bear',
-            firstName: 'Bob'
+			lastName: 'Bear',
+			firstName: 'Bob'
         }, {
-            lastName: 'Rüssel',
-            firstName: 'Rudi'
+			lastName: 'Rüssel',
+			firstName: 'Rudi'
         }];
-        window.metaData = {
-            columns: [{
-                name: 'lastName'
+		window.metaData = {
+			columns: [{
+				name: 'lastName'
             }, {
-                name: 'firstName'
+				name: 'firstName'
             }]
-        };
-        dobi.binding.run();
-    </script>
+		};
+		dobi.binding.run();
+	</script>
 
 </body>
 

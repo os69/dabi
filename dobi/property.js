@@ -491,7 +491,7 @@
 
 			var targetProperty = module.objectProperty(obj, targetPropertyPath);
 
-			var calculatedProperty = module.calculatedProperty(calcFunction, dependendProperties, targetProperty);
+			var calculatedProperty = module.calculatedProperty(calcFunction, dependendProperties);
 
 			targetProperty.set(calculatedProperty.value());
 			calculatedProperty.subscribe(targetProperty, function (event) {

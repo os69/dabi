@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="../dobi/eventing.js"></script>
+	<script src="../dobi/property.js"></script>
+	<script src="../dobi/binding.js"></script>
+	<script src="../dobi/list.js"></script>
+	<title>TestSlider</title>
+</head>
+
+<body>
+
+	<div id="target"></div>
+	<div id="templates">
+		<input type="text" data-bind="/max">
+		<input type="range" data-bind="/value" min="0" max="{{/max}}" step="1">
+	</div>
+
+
+	<script>
+		dobi.binding.run({
+			name: 'Sally',
+			value: 5,
+			max: 100,
+			setValue: function (value) {
+				this.value = value;
+			},
+			setMax: function (max) {
+				this.max = max;
+			}
+		}, document.getElementById('templates'), document.getElementById('target'));
+	</script>
+
+</body>
+
+</html>

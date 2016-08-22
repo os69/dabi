@@ -2,8 +2,8 @@
 (function () {
 
 	var model = {
-		n1: '10',
-		n2: '20',
+		n1: 10,
+		n2: 20,
 		res: 0
 	};
 
@@ -15,7 +15,7 @@
 
 	console.log('stat:', dobi.eventing.scounter);
 
-	tp.delete();
+	//tp.delete();
 
 	console.log('stat:', dobi.eventing.scounter);
 })();
