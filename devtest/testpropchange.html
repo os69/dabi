@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="../dobi/eventing.js"></script>
+	<script src="../dobi/property.js"></script>
+	<script src="../dobi/binding.js"></script>
+	<script src="../dobi/list.js"></script>
+	<title>TestPropertyChanged</title>
+</head>
+
+<body>
+
+	<div id="target"></div>
+	<div id="templates">
+		<div data-def-template="printer">
+			<input type="text" data-bind="name/first">
+			<br>
+			<input type="text" data-bind="name/last">
+			<br>
+			<input type="text" data-bind="name/(property)">
+		</div>
+
+		<div data-template="printer" data-bind="person"></div>
+		<button data-event-click="$d.self.click1()">test1</button>
+		<button data-event-click="$d.self.click2()">test2</button>
+	</div>
+
+
+
+	<script>
+		dobi.binding.run({
+			person: {
+				property: 'first',
+				name: {
+					first: 'Sally',
+					last: 'Spring'
+				}
+			},
+			person1: {
+				property: 'last',
+				name: {
+					first: 'Susan',
+					last: 'Summers'
+				}
+			},
+			person2: {
+				property: 'first',
+				name: {
+					first: 'Susanx',
+					last: 'Summersx'
+				}
+			},
+
+			counter1: 0,
+			counter2: 0,
+			click1: function () {
+				switch (this.counter1) {
+				case 0:
+					this.person.setProperty('last');
+					break;
+				case 1:
+					this.person.setProperty('first');
+					break;
+				case 2:
+					this.person.setProperty('last');
+					break;
+				case 3:
+					this.person.setProperty('first');
+					break;
+				}
+				this.counter1++;
+			},
+			click2: function () {
+				switch (this.counter2) {
+				case 0:
+					this.setPerson(this.person1);
+					break;
+				case 1:
+					this.setPerson(this.person2);
+					break;
+				}
+				this.counter2++;
+			}
+
+		}, document.getElementById('templates'), document.getElementById('target'));
+	</script>
+
+</body>
+
+</html>

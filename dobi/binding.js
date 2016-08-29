@@ -29,6 +29,7 @@
 			var CLOSE_BRACE = ')';
 			var mode = MATCH_OPEN_BRACE;
 			var tokens = [];
+			var hasGroups = false;
 			var start = 0;
 			var braceCounter = 0;
 			for (var index = 0; index < text.length; index++) {
@@ -60,6 +61,7 @@
 						});
 						start = index + 1;
 						mode = MATCH_OPEN_BRACE;
+						hasGroups = true;
 						continue;
 					}
 					break;
@@ -71,7 +73,10 @@
 					type: 'text'
 				});
 			}
-			return tokens;
+			return {
+				hasGroups: hasGroups,
+				tokens: tokens
+			};
 		};
 
 		// ===================================================================
@@ -1149,9 +1154,8 @@
 				console.log('Pathparts   :', property.pathParts);
 			},
 
-			resolveGroups: function (path) {
+			resolveGroupsOld: function (parts) {
 				var texts = [];
-				var parts = module.parseGroups(path);
 				for (var i = 0; i < parts.length; ++i) {
 					var part = parts[i];
 					if (part.type === 'gtext') {
@@ -1161,7 +1165,12 @@
 						texts.push(part.text);
 					}
 				}
-				return texts.join('');
+				var newPath = texts.join('');
+				return this.doResolveBinding(newPath);
+			},
+
+			resolveGroups: function (parts) {
+				return new propertyModule.CalculatedGroupProperty(this, parts);
 			},
 
 			resolveBinding: function (path) {
@@ -1174,11 +1183,18 @@
 					return propertyModule.staticProperty(path.slice(1, path.length - 1));
 				}
 
-				// resolve {} groups in path
-				var newPath = this.resolveGroups(path);
+				// parse groups
+				var parseResult = module.parseGroups(path);
 
-				// resolve path
-				return this.doResolveBinding(newPath);
+				// resolve
+				if (parseResult.hasGroups) {
+					// 1. with groups 
+					return this.resolveGroups(parseResult.tokens);
+				} else {
+					// 2. no groups
+					return this.doResolveBinding(path);
+				}
+
 			},
 
 			doResolveBinding: function (path) {

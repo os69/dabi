@@ -60,6 +60,7 @@
 		module.PROPERTY_TYPE_SIMPLE = 1;
 		module.PROPERTY_TYPE_STATIC = 2;
 		module.PROPERTY_TYPE_CALC = 3;
+		module.PROPERTY_TYPE_GROUPCALC = 4;
 
 		// ===================================================================
 		// property events
@@ -69,6 +70,21 @@
 		module.PROP_EVENT_TYPE_CHANGE_SPLICE = "property_change_splice";
 		module.PROP_EVENT_TYPE_DELETE = "delete";
 		module.PROP_EVENT_TYPE_UPDATE_LIST_INDEX = "list_update_list_index";
+
+		module.PROP_EVENT_TYPES_DEFAULT = [
+			module.PROP_EVENT_TYPE_CHANGE,
+			module.PROP_EVENT_TYPE_CHANGE_PUSH,
+			module.PROP_EVENT_TYPE_CHANGE_SPLICE,
+			module.PROP_EVENT_TYPE_DELETE];
+
+		module.PROP_EVENT_TYPES_ALL = [
+			module.PROP_EVENT_TYPE_CHANGE,
+			module.PROP_EVENT_TYPE_CHANGE_PUSH,
+			module.PROP_EVENT_TYPE_CHANGE_SPLICE,
+			module.PROP_EVENT_TYPE_DELETE,
+			module.PROP_EVENT_TYPE_UPDATE_LIST_INDEX];
+
+		module.PROP_EVENT_TYPES = module.PROP_EVENT_TYPES_DEFAULT;
 
 		// ===================================================================
 		// property 
@@ -80,6 +96,7 @@
 		module.Property.prototype = {
 
 			init: function (params) {
+				this.isProperty = true;
 				this.type = params.type;
 				this.eventTypes = params.eventTypes;
 				this.object = params.object;
@@ -90,12 +107,8 @@
 				if (this.type === module.PROPERTY_TYPE_STATIC)
 					this.staticValue = params.value;
 				else
-					this.pathParts = this.pathParts(this.object, this.path);
-				if (!this.eventTypes) this.eventTypes = [module.PROP_EVENT_TYPE_CHANGE,
-                                                         module.PROP_EVENT_TYPE_CHANGE_PUSH,
-                                                         module.PROP_EVENT_TYPE_CHANGE_SPLICE,
-                                                         module.PROP_EVENT_TYPE_DELETE,
-                                                         module.PROP_EVENT_TYPE_UPDATE_LIST_INDEX];
+					this.pathParts = this.createPathParts(this.object, this.path);
+				if (!this.eventTypes) this.eventTypes = module.PROP_EVENT_TYPES;
 				eventingModule.setAutoDelete(this, 0);
 			},
 
@@ -110,17 +123,17 @@
 
 			listIndex: function () {
 				var pathPart = this.pathParts[this.pathParts.length - 1];
-				return parseInt(pathPart.propertyName);
+				return pathPart.propertyName;
 			},
 
-			pathParts: function (object, path) {
+			createPathParts: function (object, path) {
 				var parts = path.split('/');
 				var pathParts = [];
 				for (var i = 0; i < parts.length; ++i) {
 					var part = parts[i];
 					pathParts.push({
 						object: object,
-						propertyName: part
+						propertyName: module.isList(object) ? parseInt(part) : part
 					});
 					if (object)
 						object = object[part];
@@ -269,11 +282,19 @@
 					var spliceIndex = event.message.args[0];
 					var spliceNumDel = event.message.args[1];
 					var spliceNumAdd = event.message.args.length - 2;
-					var listIndex = parseInt(pathPart.propertyName);
+					var listIndex = pathPart.propertyName;
 					if (listIndex < spliceIndex) return false;
-					if (spliceNumAdd === 0 && spliceNumDel === 0) return false;
-					if (spliceNumAdd === spliceNumDel && listIndex >= spliceIndex + spliceNumAdd) return false;
-					return true;
+					if (listIndex >= spliceIndex && listIndex < spliceIndex + spliceNumDel) {
+						return true; // change or delete
+					}
+					if (listIndex >= spliceIndex + spliceNumDel) {
+						if (spliceNumAdd === spliceNumDel) {
+							return false;
+						} else {
+							return true;
+						}
+					}
+					throw 'Programm Error';
 				default:
 					return true;
 				}
@@ -326,7 +347,7 @@
 			attributeChangedList: function (partIndex, event) {
 
 				var pathPart = this.pathParts[partIndex];
-				var listIndex = parseInt(pathPart.propertyName);
+				var listIndex = pathPart.propertyName;
 
 				switch (event.signal) {
 				case 'splice':
@@ -335,16 +356,28 @@
 					var spliceNumAdd = event.message.args.length - 2;
 					if (spliceIndex > listIndex) return;
 					if (listIndex >= spliceIndex && listIndex < spliceIndex + spliceNumDel) {
-						this.path += "!DELETED!";
-						pathPart.propertyName = "-1";
-						this.unListenToObjects();
-						this.raisePropertyChanged(module.PROP_EVENT_TYPE_DELETE, event);
-						return;
+						if (listIndex < pathPart.object.length) {
+							// change
+							this.attributeChangedObject(partIndex, event);
+						} else {
+							// delete
+							this.path += "!DELETED!";
+							pathPart.propertyName = "-1";
+							this.unListenToObjects();
+							this.raisePropertyChanged(module.PROP_EVENT_TYPE_DELETE, event);
+						}
 					}
-					this.path = "!SEE_PATH_PARTS!";
-					var newIndex = listIndex - spliceNumDel + spliceNumAdd;
-					pathPart.propertyName = "" + newIndex;
-					this.raisePropertyChanged(module.PROP_EVENT_TYPE_UPDATE_LIST_INDEX, event);
+					if (listIndex >= spliceIndex + spliceNumDel) {
+						if (spliceNumAdd === spliceNumDel) {
+							// nothing
+						} else {
+							// update list index
+							this.path = "!SEE_PATH_PARTS!";
+							var newIndex = listIndex - spliceNumDel + spliceNumAdd;
+							pathPart.propertyName = newIndex;
+							this.raisePropertyChanged(module.PROP_EVENT_TYPE_UPDATE_LIST_INDEX, event);
+						}
+					}
 					break;
 				default:
 					throw 'Not allowed method ' + event.signal;
@@ -376,48 +409,11 @@
 		};
 
 		// ===================================================================
-		// poperty factory methods
-		// ===================================================================
-
-		module.objectProperty = function (object, path) {
-			return new module.Property({
-				object: object,
-				path: path,
-				type: module.PROPERTY_TYPE_SIMPLE
-			});
-		};
-
-		module.listItemProperty = function (list, index) {
-			return new module.Property({
-				object: list,
-				path: index,
-				type: module.PROPERTY_TYPE_SIMPLE
-			});
-		};
-
-		module.staticProperty = function (value) {
-			return new module.Property({
-				value: value,
-				type: module.PROPERTY_TYPE_STATIC
-			});
-		};
-
-		module.calculatedProperty = function (calcFunction, dependendProperties) {
-			return new module.CalculatedProperty(calcFunction, dependendProperties);
-		};
-
-		module.wrapAsProperty = function (obj) {
-			if (obj instanceof module.Property)
-				return obj;
-			return module.staticProperty(obj);
-		};
-
-
-		// ===================================================================
 		// calculated property 
 		// ===================================================================
 		module.CalculatedProperty = function () {
 			this.init.apply(this, arguments);
+			this.isProperty = true;
 			this.type = module.PROPERTY_TYPE_CALC;
 			eventingModule.setAutoDelete(this, 0);
 		};
@@ -477,10 +473,136 @@
 			}
 		};
 
+		// ===================================================================
+		// calculated group property (for bindings which include subbindings)
+		// ===================================================================
+		module.CalculatedGroupProperty = function () {
+			this.init.apply(this, arguments);
+			this.isProperty = true;
+			this.type = module.PROPERTY_TYPE_GROUPCALC;
+			eventingModule.setAutoDelete(this, 0);
+		};
+
+		module.CalculatedGroupProperty.prototype = {
+
+			init: function (templateExecutor, parts) {
+				this.listening = false;
+				this.templateExecutor = templateExecutor;
+				this.parts = parts;
+				this.createMainProperty();
+				this.calculatedValue = this.mainProperty.value();
+			},
+
+			createMainProperty: function () {
+				var texts = [];
+				for (var i = 0; i < this.parts.length; ++i) {
+					var part = this.parts[i];
+					if (part.type === 'gtext') {
+						if (!part.property) {
+							part.property = this.templateExecutor.resolveBinding(part.text);
+						}
+						texts.push(part.property.value());
+					} else {
+						texts.push(part.text);
+					}
+				}
+				this.mainProperty = this.templateExecutor.resolveBinding(texts.join(''));
+			},
+
+			get: function () {
+				return this.calculatedValue;
+			},
+
+			set: function (value) {
+				this.mainProperty.set(value);
+			},
+
+			value: function () {
+				return this.calculatedValue;
+			},
+
+			afterDeleteSubscriptions: function () {
+				this.listening = false;
+			},
+
+			listen: function () {
+				this.listening = true;
+				for (var i = 0; i < this.parts.length; ++i) {
+					var part = this.parts[i];
+					if (part.type === 'gtext') {
+						part.property.subscribe(this, this.dependendChanged);
+					}
+				}
+				this.mainProperty.subscribe(this, this.mainPropertyChanged);
+			},
+
+			dependendChanged: function (event) {
+				this.mainProperty.unSubscribe(this, this.mainPropertyChanged);
+				this.createMainProperty();
+				this.mainProperty.subscribe(this, this.mainPropertyChanged);
+				this.calculatedValue = this.mainProperty.value();
+				eventingModule.raiseEvent(this, 'propertyChanged', {
+					value: this.calculatedValue,
+					originalEvent: event
+				});
+			},
+
+			mainPropertyChanged: function (event) {
+				this.calculatedValue = this.mainProperty.value();
+				eventingModule.raiseEvent(this, 'propertyChanged', {
+					value: this.calculatedValue,
+					originalEvent: event
+				});
+			},
+
+			subscribe: function (obj, handler) {
+				if (!this.listening) this.listen();
+				eventingModule.subscribe(this, 'propertyChanged', obj, handler);
+			},
+
+			unSubscribe: function (obj, handler) {
+				eventingModule.unSubscribe(this, 'propertyChanged', obj, handler);
+			}
+		};
 
 		// ===================================================================
-		// calculated property which updates also a target property
+		// poperty factory methods
 		// ===================================================================
+
+		module.wrapAsProperty = function (obj) {
+			if (obj.isProperty)
+				return obj;
+			return module.staticProperty(obj);
+		};
+
+		module.objectProperty = function (object, path) {
+			return new module.Property({
+				object: object,
+				path: path,
+				type: module.PROPERTY_TYPE_SIMPLE
+			});
+		};
+
+		module.listItemProperty = function (list, index) {
+			return new module.Property({
+				object: list,
+				path: index,
+				type: module.PROPERTY_TYPE_SIMPLE
+			});
+		};
+
+		module.staticProperty = function (value) {
+			return new module.Property({
+				value: value,
+				type: module.PROPERTY_TYPE_STATIC
+			});
+		};
+
+		module.calculatedProperty = function (calcFunction, dependendProperties) {
+			return new module.CalculatedProperty(calcFunction, dependendProperties);
+		};
+
+		// convinience: calculated property updates value of target
 		module.autoCalcProperty = function (obj, dependendPropertyPaths, targetPropertyPath, calcFunction) {
 
 			var dependendProperties = [];
