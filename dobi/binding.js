@@ -80,6 +80,22 @@
 		};
 
 		// ===================================================================
+		// helper: get transformation function
+		// ===================================================================        
+		module.getTransFunc = function (trans) {
+			if (typeof trans === 'function') {
+				return trans;
+			}
+			if (typeof trans === 'string') {
+				return module.transformations[trans];
+			}
+			if (trans instanceof propertyModule.Property) {
+				return module.getTransFunc(trans.value());
+			}
+			throw 'Cannot determine transformation';
+		};
+
+		// ===================================================================
 		// start template processor
 		// ===================================================================
 		module.run = function (rootScope, templateNode, targetNode) {
@@ -198,7 +214,7 @@
 		};
 
 		// ===================================================================
-		// bind string
+		// bind string poperty to dom element
 		// ===================================================================        
 		module.bindString = function (property, node, trans1, trans2) {
 			if (node.nodeType === Node.TEXT_NODE) {
@@ -277,7 +293,7 @@
 		};
 
 		// ===================================================================
-		// bind attribute of an object to an attribute of a dom element
+		// bind string property to an attribute of dom element
 		// ===================================================================        
 		module.bindAttributeToElementAttribute = function (property, attributeName, node, trans) {
 
@@ -299,7 +315,7 @@
 		};
 
 		// ===================================================================
-		// bind attribute of an object to css class dom element
+		// bind string property to css class attribute of dom element
 		// ===================================================================        
 		module.bindAttributeToCssClass = function (property, node, trans) {
 
@@ -358,23 +374,15 @@
 		};
 
 		// ===================================================================
-		// bind object
+		// bind object property to dom element
 		// ===================================================================        
-		module.bindObject = function (property, node, trans, parameters) {
+		module.bindObject = function (property, node, trans, context) {
 
 			// ensure that property is really a property
 			property = propertyModule.wrapAsProperty(property);
+			trans = propertyModule.wrapAsProperty(trans);
 
-			var getTrans = function () {
-				if (trans instanceof propertyModule.Property)
-					return module.transformations[trans.value()];
-				else if (typeof (trans) === 'string') {
-					return module.transformations[trans];
-				} else {
-					return trans;
-				}
-			};
-
+			// bind function
 			var bind = function () {
 				module.unbindChildren(node);
 				node.innerHTML = "";
@@ -382,8 +390,8 @@
 				if (value === undefined || value === null) {
 					return;
 				}
-				var t = getTrans();
-				t(property, node, null, parameters);
+				var t = module.getTransFunc(trans);
+				t(property, node, null, context);
 			};
 
 			// cleanup old subscriptions
@@ -393,42 +401,37 @@
 			property.subscribe(node, bind);
 
 			// register for change of transformation name
-			if (trans instanceof propertyModule.Property) trans.subscribe(node, bind);
+			trans.subscribe(node, bind);
 
 			// initial bind call
 			bind();
 		};
 
 		// ===================================================================
-		// bind list to dom element (ul)
+		// bind list property to dom element (ul)
 		// ===================================================================        
-		module.bindList = function (property, node, transItem, parameters) {
+		module.bindList = function (property, node, transItem, context) {
+
 			property = propertyModule.wrapAsProperty(property);
+			transItem = propertyModule.wrapAsProperty(transItem);
 
 			var dummy = function () {};
 
-			var getTransItem = function () {
-				if (transItem instanceof propertyModule.Property)
-					return module.transformations[transItem.value()];
-				else if (typeof (transItem) === 'string') {
-					return module.transformations[transItem];
-				} else {
-					return transItem;
-				}
-			};
-
 			var createItem = function (list, listIndex, parentNode, refNode) {
 				var elementProperty = propertyModule.listItemProperty(list, listIndex);
-				var t = getTransItem();
+				var t = module.getTransFunc(transItem);
 				try {
-					t(elementProperty, parentNode, refNode, parameters);
+					t(elementProperty, parentNode, refNode, context);
 				} catch (e) {
 					throw e;
 				}
 				elementProperty.subscribe(parentNode.children.item(listIndex), dummy); // TODO
 			};
 
-			var bind = function (list) {
+			var bind = function () {
+
+				// get list
+				var list = property.value();
 
 				// clean up
 				module.unbindChildren(node);
@@ -452,7 +455,7 @@
 				var list = property.value();
 				switch (e.message.type) {
 				case propertyModule.PROP_EVENT_TYPE_CHANGE:
-					bind(property.value());
+					bind();
 					break;
 				case propertyModule.PROP_EVENT_TYPE_CHANGE_PUSH:
 					createItem(list, list.length - 1, node, null);
@@ -480,19 +483,17 @@
 			});
 
 			// register for transformation change
-			if (transItem instanceof propertyModule.Property) transItem.subscribe(node, function () {
-				bind(property.value());
-			});
+			transItem.subscribe(node, bind);
 
 			// initial bind
-			bind(property.value());
+			bind();
 
 		};
 
 		// ===================================================================
 		// bind dict to dom element 
 		// ===================================================================        
-		module.bindDict = function (property, node, transItem, parameters) {
+		module.bindDict = function (property, node, transItem, context) {
 			property = propertyModule.wrapAsProperty(property);
 
 			// generate item
@@ -563,7 +564,7 @@
 
 				// bind list
 				var listProperty = propertyModule.staticProperty(list);
-				module.bindList(listProperty, node, transItem, parameters);
+				module.bindList(listProperty, node, transItem, context);
 
 				eventingModule.subscribe(obj, 'KeyAdded', list, function (event) {
 					var key = event.message.key;
@@ -688,7 +689,7 @@
 		// ===================================================================
 		// create transformation function from template
 		// ===================================================================        
-		module.parseTransformationFromTemplate = function (node, env, parameterNames) {
+		module.parseTransformationFromTemplate = function (node, env, parameterNames, transName) {
 
 			if (env)
 				env = env.clone();
@@ -696,7 +697,7 @@
 				env = new module.Environment();
 
 			return function () {
-				new module.TemplateExecutor(node, env, parameterNames, arguments).execute();
+				new module.TemplateExecutor(node, env, parameterNames, transName, arguments).execute();
 			};
 
 		};
@@ -720,22 +721,29 @@
 
 		module.TemplateExecutor.prototype = {
 
-			init: function (node, env, parameterNames, args) {
+			init: function (node, env, parameterNames, transName, args) {
 
 				this.node = node;
-
+				this.transName = transName;
 				this.env = env.clone();
 
-				this.env.push({
+				var context = args[3] || {};
+
+				var newEnv = {
 					'transId': module.generateId(),
 					'self': args[0],
 					'node': args[1],
 					'refNode': args[2],
 					'packages': [],
-					'control': {}
-				});
+					'control': {},
+					'inlineTrans': context.inlineTrans
+				};
+				if (this.transName) {
+					newEnv[transName + 'Control'] = newEnv.control;
+				}
+				this.env.push(newEnv);
 
-				var parameters = args[3];
+				var parameters = context.parameters;
 				if (parameters) {
 					for (var i = 0; i < parameters.length; ++i) {
 						var parameter = parameters[i];
@@ -835,7 +843,7 @@
 				//node.removeAttribute('data-def-template');
 				var parseResult = this.parseTemplateDefAttribute(value);
 				var transName = this.getPackagePath() + parseResult.templateName;
-				module.transformations[transName] = module.parseTransformationFromTemplate(node, this.env, parseResult.parameterNames);
+				module.transformations[transName] = module.parseTransformationFromTemplate(node, this.env, parseResult.parameterNames, transName);
 				//node.parentNode.removeChild(node);
 				return true;
 			},
@@ -1044,13 +1052,13 @@
 
 				switch (binding.type) {
 				case 'list':
-					module.bindList(binding.property, cloneNode, binding.trans, binding.transParams);
+					module.bindList(binding.property, cloneNode, binding.trans, binding.context);
 					break;
 				case 'dict':
-					module.bindDict(binding.property, cloneNode, binding.trans, binding.transParams);
+					module.bindDict(binding.property, cloneNode, binding.trans, binding.context);
 					break;
 				case 'object':
-					module.bindObject(binding.property, cloneNode, binding.trans, binding.transParams);
+					module.bindObject(binding.property, cloneNode, binding.trans, binding.context);
 					break;
 				case 'simple':
 					this.bindString(binding.property, cloneNode);
@@ -1086,8 +1094,11 @@
 					type: null,
 					property: null,
 					path: bind,
-					trans: trans,
-					transParams: transParams
+					trans: trans.first,
+					context: {
+						parameters: transParams,
+						inlineTrans: trans.second
+					}
 				};
 
 				var parts = bind.split(new RegExp(":"));
@@ -1100,22 +1111,22 @@
 						throw 'Bind Error - type cannot determined from property value';
 					}
 					binding.type = module.getType(binding.property.value());
-					if (!trans) {
+					if (!binding.trans) {
 						binding.type = 'simple';
 					}
-					if (trans && binding.type === 'simple') {
+					if (binding.trans && binding.type === 'simple') {
 						binding.type = 'object';
 					}
 				} else {
 					binding.property = this.resolveBinding(parts[1]);
 					binding.type = parts[0];
 					binding.path = bind;
-					if (!trans && binding.type !== 'simple') {
+					if (!binding.trans && binding.type !== 'simple') {
 						this.logNode(node);
 						this.logProperty(binding.property);
 						throw 'Bind Error - no transformation given - bindig type must be simple <> ' + binding.type;
 					}
-					if (trans && binding.type === 'simple') {
+					if (binding.trans && binding.type === 'simple') {
 						this.logNode(node);
 						this.logProperty(binding.property);
 						throw 'Bind Error - transformation given - bindig type may not simple';
@@ -1229,7 +1240,7 @@
 						if (property === undefined) continue;
 
 						// make property if not
-						if (!(property instanceof propertyModule.Property))
+						if (!property.isProperty)
 							property = propertyModule.staticProperty(property);
 
 						// resolve path
@@ -1270,9 +1281,6 @@
 					parameter = path;
 					subPath = undefined;
 				}
-				/*var parts = path.split('/', 2);
-				var parameter = parts[0];
-				var subPath = parts[1];*/
 
 				// resolve
 				var property = resolve(stackIndex, parameter, subPath);
@@ -1282,23 +1290,27 @@
 			},
 
 			getTransformation: function (node) {
+				var trans = {
+					first: null,
+					second: null
+				};
 				if (node.hasAttribute('data-template')) {
 					var transformationName = node.getAttribute('data-template');
 					var r = new RegExp("{{([^}]+)}}");
 					var match = r.exec(transformationName);
 					if (match) {
 						var bindName = match[1];
-						var property = this.resolveBinding(bindName);
-						return property;
+						trans.first = this.resolveBinding(bindName);
 					} else {
-						return this.resolvePackagePath(transformationName);
+						trans.first = propertyModule.staticProperty(this.resolvePackagePath(transformationName));
 					}
+					if (node.childNodes.length > 0)
+						trans.second = propertyModule.staticProperty(module.parseTransformationFromTemplate(node, this.env));
 				} else {
 					if (node.childNodes.length > 0)
-						return module.parseTransformationFromTemplate(node, this.env);
-					else
-						return null;
+						trans.first = propertyModule.staticProperty(module.parseTransformationFromTemplate(node, this.env));
 				}
+				return trans;
 			},
 
 			getTransformationParameters: function (node) {

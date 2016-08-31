@@ -1,0 +1,57 @@
+<div data-def-template="klapper(visible,title)">
+	<h1 data-bind="title"></h1>
+	<input type="checkbox" data-bind="visible">
+	<div id="klapper-container">
+		<div data-bind="." data-template="{{inlineTrans}}"></div>
+	</div>
+	<script>
+		dobi.script(function ($d) {
+			$d.resolve('visible').subscribe($d.node, function (event) {
+				if (event.message.value) {
+					$d.getElementById('klapper-container').style.display = 'block';
+				} else {
+					$d.getElementById('klapper-container').style.display = 'none';
+				}
+			})
+		});
+	</script>
+</div>
+
+<div data-def-template="klapper2(visible,template,title)">
+	<h1 data-bind="title"></h1>
+	<input type="checkbox" data-bind="visible">
+	<div id="klapper-container">
+		<div data-bind="." data-template="{{template}}"></div>
+	</div>
+	<script>
+		dobi.script(function ($d) {
+			$d.resolve('visible').subscribe($d.node, function (event) {
+				if (event.message.value) {
+					$d.getElementById('klapper-container').style.display = 'block';
+				} else {
+					$d.getElementById('klapper-container').style.display = 'none';
+				}
+			})
+		});
+	</script>
+</div>
+
+
+<div data-def-template="klapper3">
+	<h1 data-bind="title"></h1>
+	<input type="checkbox" data-bind="visible">
+	<div id="klapper-container">
+		<div data-bind="data" data-template="{{template}}"></div>
+	</div>
+	<script>
+		dobi.script(function ($d) {
+			$d.resolve('visible').subscribe($d.node, function (event) {
+				if (event.message.value) {
+					$d.getElementById('klapper-container').style.display = 'block';
+				} else {
+					$d.getElementById('klapper-container').style.display = 'none';
+				}
+			})
+		});
+	</script>
+</div>

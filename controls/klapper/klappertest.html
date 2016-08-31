@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="../../dobi/eventing.js"></script>
+	<script src="../../dobi/property.js"></script>
+	<script src="../../dobi/binding.js"></script>
+	<script src="../../dobi/list.js"></script>
+	<title>TestInlineTrans</title>
+</head>
+
+<body>
+
+
+	<script>
+		dobi.binding.loadHtml("klapper.html");
+	</script>
+
+	<script>
+		window.person = {
+			visible: true,
+			first: 'Sally',
+			last: 'Spring'
+		};
+	</script>
+
+	<!-- Klapper -->
+	<div data-template="klapper" data-bind="person" data-template-parameters="person/visible,'Mein Klapper'">
+		<div data-bind="first"></div>
+		<div data-bind="last"></div>
+	</div>
+
+	<!-- Klapper -->
+	<div data-def-template="personTemplate">
+		<div data-bind="first"></div>
+		<div data-bind="last"></div>
+	</div>
+	<div data-template="klapper2" data-bind="person" data-template-parameters="person/visible,'personTemplate','Mein Klapper2'"></div>
+
+	<!-- Klapper -->
+	<script>
+		window.personKlapper = {
+			title: 'Mein Klapper3',
+			visible: true,
+			data: window.person,
+			template: 'personTemplate'
+		}
+	</script>
+	<div data-template="klapper3" data-bind="personKlapper"></div>
+
+
+	<script>
+		dobi.binding.run(window, document.getElementById('templates'), document.getElementById('target'));
+	</script>
+
+</body>
+
+</html>
