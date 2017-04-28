@@ -941,7 +941,7 @@
 
 			createScriptInfo: function (targetNode, targetParentNode, targetRefNode) {
 				var self = this;
-				return {
+				var si = {
 					env: self.env,
 					node: targetNode,
 					parentNode: targetParentNode,
@@ -959,8 +959,19 @@
 					},
 					value: function (path) {
 						return this.resolve(path).value();
+					},
+					setControl: function (control) {
+						this.control = control;
+						self.env.data.control = control;
+						if (self.transName) {
+							self.env.data[self.transName + 'Control'] = control;
+						}
 					}
 				};
+				if (self.transName) {
+					si[self.transName + 'Control'] = self.env.data[self.transName + 'Control'];
+				}
+				return si;
 			},
 
 			processScript: function (node, targetParentNode, targetRefNode) {
@@ -1210,12 +1221,6 @@
 
 			doResolveBinding: function (path) {
 
-				var self = this;
-
-				if (path === 'Name') {
-					var dummy;
-				}
-
 				var moveUp = function (path) {
 					var parentLevel = 0;
 					while (path.indexOf("..") === 0) {
@@ -1231,32 +1236,49 @@
 					};
 				};
 
-				var resolve = function (index, name, path) {
-					for (var i = index; i >= 0; --i) {
+				var splitPath = function (path) {
+					var dIndex = path.indexOf('/');
+					var parameter, subPath;
+					if (dIndex >= 0) {
+						return {
+							parameter: path.slice(0, dIndex),
+							subPath: path.slice(dIndex + 1)
+						};
+					} else {
+						return {
+							parameter: path,
+							subPath: undefined
+						};
+					}
+				};
 
-						// get property by name
-						var data = self.env.stack[i];
-						var property = data[name];
-						if (property === undefined) continue;
+				var resolveNew = function (data, parameter, path) {
 
-						// make property if not
-						if (!property.isProperty)
-							property = propertyModule.staticProperty(property);
+					// get property by name
+					var property = data[parameter];
+					if (property === undefined) return null;
 
-						// resolve path
-						if (!path) {
-							return property;
+					// make property if not
+					if (property === null || !property.isProperty)
+						property = propertyModule.staticProperty(property);
+
+					// resolve path
+					if (!path) {
+						return property;
+					} else {
+						var resultProperty = propertyModule.objectProperty(property.value(), path);
+						if (resultProperty.value() !== undefined) {
+							return resultProperty;
 						} else {
-							return propertyModule.objectProperty(property.value(), path);
+							return null;
 						}
 					}
 
-					return null;
 				};
 
 				// move up in the stack according to '../' path prefixes
 				var result = moveUp(path);
-				var stackIndex = self.env.stack.length - result.parentLevel - 1;
+				var stackIndex = this.env.stack.length - result.parentLevel - 1;
 				path = result.path;
 
 				// check for root
@@ -1266,27 +1288,32 @@
 				}
 
 				// check for self
-				if (path === '' || path === '.') return self.env.stack[stackIndex].self;
+				if (path === '' || path === '.') return this.env.stack[stackIndex].self;
 
 				// check for self prefix
 				if (path.slice(0, 2) === './') path = path.slice(2);
 
-				// split path into parameter and subpath
-				var dIndex = path.indexOf('/');
-				var parameter, subPath;
-				if (dIndex >= 0) {
-					parameter = path.slice(0, dIndex);
-					subPath = path.slice(dIndex + 1);
-				} else {
-					parameter = path;
-					subPath = undefined;
-				}
+				// split path into parameter and subPath
+				var splittedPath = splitPath(path);
 
-				// resolve
-				var property = resolve(stackIndex, parameter, subPath);
-				if (property) return property;
-				property = resolve(stackIndex, 'self', path);
-				return property;
+				// resolve				
+				for (var i = stackIndex; i >= 0; --i) {
+					var data = this.env.stack[i];
+
+					// 1) lookup without self
+					var property = resolveNew(data, splittedPath.parameter, splittedPath.subPath);
+					if (property) {
+						return property;
+					}
+
+					// 2) lookup with self
+					property = resolveNew(data, 'self', path);
+					if (property) {
+						return property;
+					}
+				}
+				return null;
+
 			},
 
 			getTransformation: function (node) {
